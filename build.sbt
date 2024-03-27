@@ -1,5 +1,4 @@
 import sbt.url
-
 import scala.collection.Seq
 
 addCommandAlias("format", "scalafmtAll; scalafmtSbt")
@@ -36,6 +35,8 @@ val versions = new {
   val scalatest = "3.2.18"
   val mockito   = "3.2.11.0"
   val zioJson   = "0.6.2"
+  val requests  = "0.8.0"
+  val upickle   = "3.2.0"
 }
 
 val commonSettings = Seq(
@@ -47,10 +48,6 @@ val commonSettings = Seq(
         "-Wunused:all",
         "-deprecation"
       )
-    } else if (scalaVersion.value == versions.scala212) {
-      Seq(
-        "-language:higherKinds",
-      )
     } else Seq.empty
   }
 )
@@ -60,6 +57,17 @@ lazy val core = (project in file("modules/core"))
     name := s"${globals.projectName}-core"
   )
   .settings(commonSettings)
+
+lazy val requests = (project in file("modules/requests"))
+  .settings(
+    name := s"${globals.projectName}-requests",
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "requests" % versions.requests,
+      "com.lihaoyi" %% "upickle"  % versions.upickle
+    )
+  )
+  .settings(commonSettings)
+  .dependsOn(core)
 
 lazy val sttp_core = (project in file("modules/sttp-core"))
   .settings(
@@ -88,4 +96,4 @@ lazy val root = (project in file("."))
     publish / skip := true,
     name           := globals.projectName
   )
-  .aggregate(core, sttp_core, zio_json)
+  .aggregate(core, requests, sttp_core, zio_json)

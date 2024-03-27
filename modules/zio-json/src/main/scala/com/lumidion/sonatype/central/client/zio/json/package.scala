@@ -7,6 +7,7 @@ import com.lumidion.sonatype.central.client.core.{
   DeploymentState
 }
 
+import scala.language.higherKinds
 import zio.json.{DeriveJsonDecoder, JsonDecoder}
 
 package object json {
