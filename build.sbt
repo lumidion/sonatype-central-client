@@ -33,7 +33,6 @@ val versions = new {
   val scala3    = "3.3.3"
   val sttp      = "4.0.0-M10"
   val scalatest = "3.2.18"
-  val mockito   = "3.2.11.0"
   val zioJson   = "0.6.2"
   val requests  = "0.8.0"
   val upickle   = "3.2.0"
@@ -73,9 +72,7 @@ lazy val sttp_core = (project in file("modules/sttp-core"))
   .settings(
     name := s"${globals.projectName}-sttp-core",
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client4" %% "core"        % versions.sttp,
-      "org.scalatest"                 %% "scalatest"   % versions.scalatest % Test,
-      "org.scalatestplus"             %% "mockito-4-2" % versions.mockito   % Test
+      "com.softwaremill.sttp.client4" %% "core" % versions.sttp
     )
   )
   .settings(commonSettings)
@@ -90,6 +87,17 @@ lazy val zio_json = (project in file("modules/zio-json"))
   )
   .settings(commonSettings)
   .dependsOn(sttp_core)
+
+lazy val integration_test = (project in file("modules/integration-test"))
+  .settings(
+    publish / skip := true,
+    name           := "it",
+    libraryDependencies ++= Seq(
+      "org.scalatest"                 %% "scalatest" % versions.scalatest % Test,
+      "com.softwaremill.sttp.client4" %% "zio-json"  % versions.sttp      % Test
+    )
+  )
+  .dependsOn(requests, sttp_core, zio_json)
 
 lazy val root = (project in file("."))
   .settings(
