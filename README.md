@@ -11,7 +11,7 @@ For a quick start with sttp and zio json, add the following to your library depe
 ```sbt
   "com.lumidion"  %%  "sonatype-central-client-sttp-core"  %  "0.1.0"
   "com.lumidion"  %%  "sonatype-central-client-zio-json"   %  "0.1.0"
-  "com.softwaremill.sttp.client4" %% "zio-json"            % "4.0.0-M11"
+  "com.softwaremill.sttp.client4" %% "zio-json"            %  "4.0.0-M11"
 ```
 
 #### Simple App
@@ -62,7 +62,7 @@ For a quick start with requests, add the following to your library dependencies 
   "com.lumidion"  %%  "sonatype-central-client-requests"  %  "0.1.0"
 ```
 
-#### Sample App
+#### Simple App
 
 ```scala
 import com.lumidion.sonatype.central.client.core.{

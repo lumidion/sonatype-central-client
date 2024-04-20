@@ -15,8 +15,7 @@ import com.lumidion.sonatype.central.client.core.RequestParams.{
 }
 
 import java.io.File
-import requests.{headers, BaseSession, MultiItem, MultiPart, Session}
-import requests.RequestBlob.EmptyRequestBlob
+import requests.{BaseSession, MultiItem, MultiPart, Session}
 import scala.annotation.tailrec
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import upickle.default._
