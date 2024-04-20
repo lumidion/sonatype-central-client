@@ -1,5 +1,4 @@
 import sbt.url
-
 import scala.collection.Seq
 
 addCommandAlias("format", "scalafmtAll; scalafmtSbt")
@@ -32,10 +31,11 @@ val versions = new {
   val scala212  = "2.12.19"
   val scala213  = "2.13.13"
   val scala3    = "3.3.3"
-  val sttp      = "4.0.0-M10"
+  val sttp      = "4.0.0-M11"
   val scalatest = "3.2.18"
-  val mockito   = "3.2.11.0"
   val zioJson   = "0.6.2"
+  val requests  = "0.8.2"
+  val upickle   = "3.2.0"
 }
 
 val commonSettings = Seq(
@@ -47,10 +47,6 @@ val commonSettings = Seq(
         "-Wunused:all",
         "-deprecation"
       )
-    } else if (scalaVersion.value == versions.scala212) {
-      Seq(
-        "-language:higherKinds",
-      )
     } else Seq.empty
   }
 )
@@ -61,13 +57,22 @@ lazy val core = (project in file("modules/core"))
   )
   .settings(commonSettings)
 
+lazy val requests = (project in file("modules/requests"))
+  .settings(
+    name := s"${globals.projectName}-requests",
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "requests" % versions.requests,
+      "com.lihaoyi" %% "upickle"  % versions.upickle
+    )
+  )
+  .settings(commonSettings)
+  .dependsOn(core)
+
 lazy val sttp_core = (project in file("modules/sttp-core"))
   .settings(
     name := s"${globals.projectName}-sttp-core",
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client4" %% "core"        % versions.sttp,
-      "org.scalatest"                 %% "scalatest"   % versions.scalatest % Test,
-      "org.scalatestplus"             %% "mockito-4-2" % versions.mockito   % Test
+      "com.softwaremill.sttp.client4" %% "core" % versions.sttp
     )
   )
   .settings(commonSettings)
@@ -83,9 +88,20 @@ lazy val zio_json = (project in file("modules/zio-json"))
   .settings(commonSettings)
   .dependsOn(sttp_core)
 
+lazy val integration_test = (project in file("modules/integration-test"))
+  .settings(
+    publish / skip := true,
+    name           := "it",
+    libraryDependencies ++= Seq(
+      "org.scalatest"                 %% "scalatest" % versions.scalatest % Test,
+      "com.softwaremill.sttp.client4" %% "zio-json"  % versions.sttp      % Test
+    )
+  )
+  .dependsOn(requests, sttp_core, zio_json)
+
 lazy val root = (project in file("."))
   .settings(
     publish / skip := true,
     name           := globals.projectName
   )
-  .aggregate(core, sttp_core, zio_json)
+  .aggregate(core, requests, sttp_core, zio_json)

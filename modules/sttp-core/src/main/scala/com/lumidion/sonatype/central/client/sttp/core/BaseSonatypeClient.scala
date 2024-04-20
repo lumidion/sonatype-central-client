@@ -23,6 +23,7 @@ import sttp.client4.{
 }
 import sttp.client4.logging.LoggingOptions
 import sttp.model.HeaderNames
+import sttp.model.MediaType.MultipartFormData
 
 abstract class BaseSonatypeClient(
     credentials: SonatypeCredentials,
@@ -59,7 +60,7 @@ abstract class BaseSonatypeClient(
       .headers(
         Map(authorizationHeader)
       )
-      .contentType("multipart/form-data")
+      .contentType(MultipartFormData.toString())
       .multipartBody(
         multipartFile(
           uploadBundleMultipartFileName,
