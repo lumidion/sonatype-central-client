@@ -1,7 +1,7 @@
 package com.lumidion.sonatype.central.client.core
 
 abstract class GenericSonatypeClient {
-  protected val clientBaseUrl         = s"https://central.sonatype.com/api/v1/publisher"
+  protected val clientBaseUrl         = s"http://localhost:3000/api/v1/publisher"
   protected val clientUploadBundleUrl = s"$clientBaseUrl/upload"
   protected val clientCheckStatusUrl  = s"$clientBaseUrl/status"
   protected def clientUpdateDeploymentUrl(id: DeploymentId): String =

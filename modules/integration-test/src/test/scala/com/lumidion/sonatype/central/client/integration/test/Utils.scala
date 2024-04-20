@@ -17,7 +17,7 @@ object Utils {
   }
 
   lazy val zippedBundle: File = {
-    val path = getClass.getResource("/tmp/readme.zip").getPath
+    val path = getClass.getResource("/readme.zip").getPath
     new File(path)
   }
 }

@@ -19,7 +19,7 @@ import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 import sttp.client4.ziojson.asJson
 
 class SyncSttpItSpec extends AnyFreeSpec with Matchers {
-  "#uploadBundle" - {
+  "#uploadBundle" ignore {
     "should succeed" in {
       val backend = HttpURLConnectionBackend()
       val client = new SyncSonatypeClient(

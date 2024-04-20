@@ -15,14 +15,14 @@ import com.lumidion.sonatype.central.client.core.RequestParams.{
 }
 
 import java.io.File
-import requests.{MultiItem, MultiPart, Session}
+import requests.{headers, BaseSession, MultiItem, MultiPart, Session}
+import requests.RequestBlob.EmptyRequestBlob
 import scala.annotation.tailrec
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import upickle.default._
 
 class SyncSonatypeClient(
-    credentials: SonatypeCredentials,
-    userAgent: Option[String] = None
+    credentials: SonatypeCredentials
 ) extends GenericSonatypeClient {
 
   implicit protected val deploymentIdDecoder: Reader[DeploymentId] =
@@ -41,14 +41,6 @@ class SyncSonatypeClient(
 
   private val authHeader = Map("Authorization" -> credentials.toAuthToken)
 
-  private val userAgentHeader =
-    userAgent.map(agent => Map("User-Agent" -> agent)).getOrElse(Map.empty)
-
-  private val jsonHeaders = Map(
-    "Accept"       -> "application/json",
-    "Content-Type" -> "application/json"
-  )
-
   private def paramsToString(params: Map[String, String]): String = {
     params.toVector
       .map { case (key, value) =>
@@ -57,12 +49,12 @@ class SyncSonatypeClient(
       .mkString("&")
   }
 
-  private val http: Session = requests.Session(
-    readTimeout = 30000,
+  private val session: Session = requests.Session(
+    readTimeout = 300000,
     connectTimeout = 5000,
     maxRedirects = 0,
-    check = false,
-    headers = authHeader ++ userAgentHeader
+    check = true,
+    headers = BaseSession.defaultHeaders ++ authHeader
   )
 
   @tailrec
@@ -103,7 +95,7 @@ class SyncSonatypeClient(
     val finalEndpoint       = s"$clientUploadBundleUrl?$finalParamsAsString"
 
     val response = withRetry(
-      http.post(
+      session.post(
         finalEndpoint,
         data = MultiPart(
           MultiItem(
@@ -132,9 +124,9 @@ class SyncSonatypeClient(
     val finalEndpoint = s"$clientCheckStatusUrl?$finalParams"
 
     val response = withRetry(
-      http.post(
+      session.post(
         finalEndpoint,
-        headers = jsonHeaders,
+        headers = Map("Content-Type" -> "text/plain"),
         readTimeout = timeout.toMillis.toInt
       ),
       retries

@@ -1,20 +1,13 @@
 package com.lumidion.sonatype.central.client.integration.test
 
-import com.lumidion.sonatype.central.client.core.{DeploymentName, DeploymentState, PublishingType}
-import com.lumidion.sonatype.central.client.integration.test.Utils.{
-  sonatypeCredentials,
-  zippedBundle
-}
+import com.lumidion.sonatype.central.client.core.{DeploymentId, DeploymentName, DeploymentState, PublishingType, SonatypeCredentials}
+import com.lumidion.sonatype.central.client.integration.test.Utils.{sonatypeCredentials, zippedBundle}
 import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
-
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 class RequestsItSpec extends AnyFreeSpec with Matchers {
   "#uploadBundle" - {
-    "multipart" in {
-      MultipartTrial.uploadFile()
-    }
     "should succeed" in {
       val client = new SyncSonatypeClient(sonatypeCredentials)
       val id = client.uploadBundle(
