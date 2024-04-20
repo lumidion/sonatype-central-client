@@ -34,7 +34,7 @@ val versions = new {
   val sttp      = "4.0.0-M11"
   val scalatest = "3.2.18"
   val zioJson   = "0.6.2"
-  val requests  = "0.0.0-166-da3e02-DIRTY6b8ab516"
+  val requests  = "0.8.2"
   val upickle   = "3.2.0"
 }
 
