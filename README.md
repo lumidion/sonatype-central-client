@@ -81,7 +81,7 @@ object Main {
     val file        = new File("mybundle.zip")
 
     val deploymentId = client
-      .uploadBundle(
+      .uploadBundleFromFile(
         file,
         DeploymentName("com.testing.project-1.0.0"),
         Some(PublishingType.AUTOMATIC)
