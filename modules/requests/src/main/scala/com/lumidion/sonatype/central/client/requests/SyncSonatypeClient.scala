@@ -23,14 +23,12 @@ import com.lumidion.sonatype.central.client.core.SonatypeCentralError.{
 import java.io.File
 import requests.{BaseSession, MultiItem, MultiPart, Session}
 import scala.annotation.tailrec
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import upickle.default._
 
 class SyncSonatypeClient(
     credentials: SonatypeCredentials,
     readTimeout: Int = 300 * 1000,
-    connectTimeout: Int = 5000,
-    awaitTimeout: Int = 120 * 1000
+    connectTimeout: Int = 5000
 ) extends GenericSonatypeClient {
 
   implicit protected val deploymentIdDecoder: Reader[DeploymentId] =
@@ -48,6 +46,8 @@ class SyncSonatypeClient(
     macroR[CheckStatusResponse]
 
   private val authHeader = Map("Authorization" -> credentials.toAuthToken)
+
+  private val defaultAwaitTimeout = 120 * 1000
 
   private def paramsToString(params: Map[String, String]): String = {
     params.toVector
@@ -68,6 +68,7 @@ class SyncSonatypeClient(
   @tailrec
   private def withRetry(
       request: => requests.Response,
+      awaitTimeout: Int = defaultAwaitTimeout,
       timeoutInterval: Int = 100,
       totalAwaitTime: Int = 0
   ): requests.Response = {
@@ -107,8 +108,7 @@ class SyncSonatypeClient(
       localBundlePath: File,
       deploymentName: DeploymentName,
       publishingType: Option[PublishingType],
-      retries: Int = 3,
-      timeout: FiniteDuration = 10.minutes
+      timeout: Int = defaultAwaitTimeout
   ): DeploymentId = {
     val item = MultiItem(
       uploadBundleMultipartFileName,
@@ -120,7 +120,6 @@ class SyncSonatypeClient(
       item,
       deploymentName,
       publishingType,
-      retries = retries,
       timeout = timeout
     )
   }
@@ -129,8 +128,7 @@ class SyncSonatypeClient(
       bundleAsBytes: Array[Byte],
       deploymentName: DeploymentName,
       publishingType: Option[PublishingType],
-      retries: Int = 3,
-      timeout: FiniteDuration = 10.minutes
+      timeout: Int = defaultAwaitTimeout
   ): DeploymentId = {
     val item = MultiItem(
       uploadBundleMultipartFileName,
@@ -142,7 +140,6 @@ class SyncSonatypeClient(
       item,
       deploymentName,
       publishingType,
-      retries = retries,
       timeout = timeout
     )
   }
@@ -151,8 +148,7 @@ class SyncSonatypeClient(
       bundleItem: MultiItem,
       deploymentName: DeploymentName,
       publishingType: Option[PublishingType],
-      retries: Int = 3,
-      timeout: FiniteDuration = 10.minutes
+      timeout: Int
   ): DeploymentId = {
     val deploymentIdParams = Map(
       (UploadBundleRequestParams.BUNDLE_NAME.unapply, deploymentName.unapply)
@@ -170,10 +166,9 @@ class SyncSonatypeClient(
         finalEndpoint,
         data = MultiPart(
           bundleItem
-        ),
-        readTimeout = timeout.toMillis.toInt
+        )
       ),
-      retries
+      awaitTimeout = timeout
     )
 
     DeploymentId((response.text()))
@@ -181,8 +176,7 @@ class SyncSonatypeClient(
 
   def checkStatus(
       deploymentId: DeploymentId,
-      retries: Int = 3,
-      timeout: FiniteDuration = 3.seconds
+      timeout: Int = 5000
   ): CheckStatusResponse = {
     val deploymentIdParams = Map(
       (CheckStatusRequestParams.DEPLOYMENT_ID.unapply -> deploymentId.unapply)
@@ -193,10 +187,9 @@ class SyncSonatypeClient(
     val response = withRetry(
       session.post(
         finalEndpoint,
-        headers = Map("Content-Type" -> "text/plain"),
-        readTimeout = timeout.toMillis.toInt
+        headers = Map("Content-Type" -> "text/plain")
       ),
-      retries
+      awaitTimeout = timeout
     )
 
     read[CheckStatusResponse](response.text())
