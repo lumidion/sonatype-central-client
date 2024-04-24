@@ -13,15 +13,22 @@ import com.lumidion.sonatype.central.client.core.RequestParams.{
   CheckStatusRequestParams,
   UploadBundleRequestParams
 }
+import com.lumidion.sonatype.central.client.core.SonatypeCentralError.{
+  AuthorizationError,
+  GenericError,
+  GenericUserError,
+  InternalServerError
+}
 
 import java.io.File
 import requests.{BaseSession, MultiItem, MultiPart, Session}
 import scala.annotation.tailrec
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import upickle.default._
 
 class SyncSonatypeClient(
-    credentials: SonatypeCredentials
+    credentials: SonatypeCredentials,
+    readTimeout: Int = 300 * 1000,
+    connectTimeout: Int = 5000
 ) extends GenericSonatypeClient {
 
   implicit protected val deploymentIdDecoder: Reader[DeploymentId] =
@@ -40,6 +47,8 @@ class SyncSonatypeClient(
 
   private val authHeader = Map("Authorization" -> credentials.toAuthToken)
 
+  private val defaultAwaitTimeout = 120 * 1000
+
   private def paramsToString(params: Map[String, String]): String = {
     params.toVector
       .map { case (key, value) =>
@@ -49,38 +58,97 @@ class SyncSonatypeClient(
   }
 
   private val session: Session = requests.Session(
-    readTimeout = 300000,
-    connectTimeout = 5000,
+    readTimeout = readTimeout,
+    connectTimeout = connectTimeout,
     maxRedirects = 0,
-    check = true,
+    check = false,
     headers = BaseSession.defaultHeaders ++ authHeader
   )
 
   @tailrec
   private def withRetry(
       request: => requests.Response,
-      retries: Int = 10,
-      initialTimeout: FiniteDuration = 100.millis
+      awaitTimeout: Int = defaultAwaitTimeout,
+      timeoutInterval: Int = 100,
+      totalAwaitTime: Int = 0
   ): requests.Response = {
-    val response = request
-    if (response.is5xx && retries > 0) {
-      Thread.sleep(initialTimeout.toMillis)
-      withRetry(request, retries - 1, initialTimeout * 2)
+    val response =
+      try {
+        request
+      } catch {
+        case ex: Throwable => throw GenericError(ex)
+      }
+    if (response.is5xx && totalAwaitTime <= awaitTimeout) {
+      Thread.sleep(timeoutInterval)
+      withRetry(request, timeoutInterval * 2, totalAwaitTime + timeoutInterval)
     } else if (!response.is2xx) {
-      throw new Exception(
-        s"${response.url} returned ${response.statusCode}\n${response.text()}"
+      throw InternalServerError(
+        s"Sonatype Central returned ${response.statusCode}\n${response.text()}"
+      )
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      throw AuthorizationError(
+        s"Sonatype Central returned ${response.statusCode}. Error message: ${response.text()}"
+      )
+    } else if (response.statusCode == 400) {
+      throw GenericUserError(
+        s"Sonatype Central returned ${response.statusCode}. Error message: ${response.text()}"
+      )
+    } else if (!response.is2xx) {
+      throw GenericError(
+        new Exception(
+          s"Sonatype Central returned ${response.statusCode}. Error message: ${response.text()}"
+        )
       )
     } else {
       response
     }
   }
 
-  def uploadBundle(
+  def uploadBundleFromFile(
       localBundlePath: File,
       deploymentName: DeploymentName,
       publishingType: Option[PublishingType],
-      retries: Int = 3,
-      timeout: FiniteDuration = 10.minutes
+      timeout: Int = defaultAwaitTimeout
+  ): DeploymentId = {
+    val item = MultiItem(
+      uploadBundleMultipartFileName,
+      localBundlePath,
+      localBundlePath.getName
+    )
+
+    uploadBundleInternal(
+      item,
+      deploymentName,
+      publishingType,
+      timeout = timeout
+    )
+  }
+
+  def uploadBundleFromBytes(
+      bundleAsBytes: Array[Byte],
+      deploymentName: DeploymentName,
+      publishingType: Option[PublishingType],
+      timeout: Int = defaultAwaitTimeout
+  ): DeploymentId = {
+    val item = MultiItem(
+      uploadBundleMultipartFileName,
+      bundleAsBytes,
+      s"${deploymentName.unapply}-bundle"
+    )
+
+    uploadBundleInternal(
+      item,
+      deploymentName,
+      publishingType,
+      timeout = timeout
+    )
+  }
+
+  private def uploadBundleInternal(
+      bundleItem: MultiItem,
+      deploymentName: DeploymentName,
+      publishingType: Option[PublishingType],
+      timeout: Int
   ): DeploymentId = {
     val deploymentIdParams = Map(
       (UploadBundleRequestParams.BUNDLE_NAME.unapply, deploymentName.unapply)
@@ -97,15 +165,10 @@ class SyncSonatypeClient(
       session.post(
         finalEndpoint,
         data = MultiPart(
-          MultiItem(
-            uploadBundleMultipartFileName,
-            localBundlePath,
-            localBundlePath.getName
-          )
-        ),
-        readTimeout = timeout.toMillis.toInt
+          bundleItem
+        )
       ),
-      retries
+      awaitTimeout = timeout
     )
 
     DeploymentId((response.text()))
@@ -113,8 +176,7 @@ class SyncSonatypeClient(
 
   def checkStatus(
       deploymentId: DeploymentId,
-      retries: Int = 3,
-      timeout: FiniteDuration = 3.seconds
+      timeout: Int = 5000
   ): CheckStatusResponse = {
     val deploymentIdParams = Map(
       (CheckStatusRequestParams.DEPLOYMENT_ID.unapply -> deploymentId.unapply)
@@ -125,10 +187,9 @@ class SyncSonatypeClient(
     val response = withRetry(
       session.post(
         finalEndpoint,
-        headers = Map("Content-Type" -> "text/plain"),
-        readTimeout = timeout.toMillis.toInt
+        headers = Map("Content-Type" -> "text/plain")
       ),
-      retries
+      awaitTimeout = timeout
     )
 
     read[CheckStatusResponse](response.text())
