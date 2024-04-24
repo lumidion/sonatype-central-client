@@ -21,13 +21,16 @@ import com.lumidion.sonatype.central.client.core.SonatypeCentralError.{
 }
 
 import java.io.File
-import requests.{BaseSession, MultiItem, MultiPart, Response, Session}
+import requests.{BaseSession, MultiItem, MultiPart, Session}
 import scala.annotation.tailrec
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import upickle.default._
 
 class SyncSonatypeClient(
-    credentials: SonatypeCredentials
+    credentials: SonatypeCredentials,
+    readTimeout: Int = 300 * 1000,
+    connectTimeout: Int = 5000,
+    awaitTimeout: Int = 120 * 1000
 ) extends GenericSonatypeClient {
 
   implicit protected val deploymentIdDecoder: Reader[DeploymentId] =
@@ -55,18 +58,18 @@ class SyncSonatypeClient(
   }
 
   private val session: Session = requests.Session(
-    readTimeout = 300000,
-    connectTimeout = 5000,
+    readTimeout = readTimeout,
+    connectTimeout = connectTimeout,
     maxRedirects = 0,
-    check = true,
+    check = false,
     headers = BaseSession.defaultHeaders ++ authHeader
   )
 
   @tailrec
   private def withRetry(
       request: => requests.Response,
-      retries: Int = 10,
-      initialTimeout: FiniteDuration = 100.millis
+      timeoutInterval: Int = 100,
+      totalAwaitTime: Int = 0
   ): requests.Response = {
     val response =
       try {
@@ -74,9 +77,9 @@ class SyncSonatypeClient(
       } catch {
         case ex: Throwable => throw GenericError(ex)
       }
-    if (response.is5xx && retries > 0) {
-      Thread.sleep(initialTimeout.toMillis)
-      withRetry(request, retries - 1, initialTimeout * 2)
+    if (response.is5xx && totalAwaitTime <= awaitTimeout) {
+      Thread.sleep(timeoutInterval)
+      withRetry(request, timeoutInterval * 2, totalAwaitTime + timeoutInterval)
     } else if (!response.is2xx) {
       throw InternalServerError(
         s"Sonatype Central returned ${response.statusCode}\n${response.text()}"
