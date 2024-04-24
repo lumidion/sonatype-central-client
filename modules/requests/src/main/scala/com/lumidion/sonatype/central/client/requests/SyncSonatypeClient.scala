@@ -13,9 +13,15 @@ import com.lumidion.sonatype.central.client.core.RequestParams.{
   CheckStatusRequestParams,
   UploadBundleRequestParams
 }
+import com.lumidion.sonatype.central.client.core.SonatypeCentralError.{
+  AuthorizationError,
+  GenericError,
+  GenericUserError,
+  InternalServerError
+}
 
 import java.io.File
-import requests.{BaseSession, MultiItem, MultiPart, Session}
+import requests.{BaseSession, MultiItem, MultiPart, Response, Session}
 import scala.annotation.tailrec
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import upickle.default._
@@ -62,21 +68,84 @@ class SyncSonatypeClient(
       retries: Int = 10,
       initialTimeout: FiniteDuration = 100.millis
   ): requests.Response = {
-    val response = request
+    val response =
+      try {
+        request
+      } catch {
+        case ex: Throwable => throw GenericError(ex)
+      }
     if (response.is5xx && retries > 0) {
       Thread.sleep(initialTimeout.toMillis)
       withRetry(request, retries - 1, initialTimeout * 2)
     } else if (!response.is2xx) {
-      throw new Exception(
-        s"${response.url} returned ${response.statusCode}\n${response.text()}"
+      throw InternalServerError(
+        s"Sonatype Central returned ${response.statusCode}\n${response.text()}"
+      )
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      throw AuthorizationError(
+        s"Sonatype Central returned ${response.statusCode}. Error message: ${response.text()}"
+      )
+    } else if (response.statusCode == 400) {
+      throw GenericUserError(
+        s"Sonatype Central returned ${response.statusCode}. Error message: ${response.text()}"
+      )
+    } else if (!response.is2xx) {
+      throw GenericError(
+        new Exception(
+          s"Sonatype Central returned ${response.statusCode}. Error message: ${response.text()}"
+        )
       )
     } else {
       response
     }
   }
 
-  def uploadBundle(
+  def uploadBundleFromFile(
       localBundlePath: File,
+      deploymentName: DeploymentName,
+      publishingType: Option[PublishingType],
+      retries: Int = 3,
+      timeout: FiniteDuration = 10.minutes
+  ): DeploymentId = {
+    val item = MultiItem(
+      uploadBundleMultipartFileName,
+      localBundlePath,
+      localBundlePath.getName
+    )
+
+    uploadBundleInternal(
+      item,
+      deploymentName,
+      publishingType,
+      retries = retries,
+      timeout = timeout
+    )
+  }
+
+  def uploadBundleFromBytes(
+      bundleAsBytes: Array[Byte],
+      deploymentName: DeploymentName,
+      publishingType: Option[PublishingType],
+      retries: Int = 3,
+      timeout: FiniteDuration = 10.minutes
+  ): DeploymentId = {
+    val item = MultiItem(
+      uploadBundleMultipartFileName,
+      bundleAsBytes,
+      s"${deploymentName.unapply}-bundle"
+    )
+
+    uploadBundleInternal(
+      item,
+      deploymentName,
+      publishingType,
+      retries = retries,
+      timeout = timeout
+    )
+  }
+
+  private def uploadBundleInternal(
+      bundleItem: MultiItem,
       deploymentName: DeploymentName,
       publishingType: Option[PublishingType],
       retries: Int = 3,
@@ -97,11 +166,7 @@ class SyncSonatypeClient(
       session.post(
         finalEndpoint,
         data = MultiPart(
-          MultiItem(
-            uploadBundleMultipartFileName,
-            localBundlePath,
-            localBundlePath.getName
-          )
+          bundleItem
         ),
         readTimeout = timeout.toMillis.toInt
       ),
