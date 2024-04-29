@@ -30,15 +30,8 @@ abstract class BaseSonatypeClient(
     loggingOptions: Option[LoggingOptions] = None
 ) extends GenericSonatypeClient {
   private val baseRequest = quickRequest
-    .logSettings(
-      logRequestBody = loggingOptions.flatMap(_.logRequestBody),
-      logResponseBody = loggingOptions.flatMap(_.logResponseBody),
-      logRequestHeaders = loggingOptions.flatMap(_.logRequestHeaders),
-      logResponseHeaders = loggingOptions.flatMap(_.logResponseHeaders)
-    )
-
-  private def authorizationHeader: (String, String) =
-    (HeaderNames.Authorization, credentials.toAuthToken)
+    .logSettings(loggingOptions)
+    .headers(Map(HeaderNames.Authorization -> credentials.toAuthToken))
 
   def uploadBundleRequest(
       localBundlePath: File,
@@ -57,9 +50,6 @@ abstract class BaseSonatypeClient(
 
     baseRequest
       .post(endpoint)
-      .headers(
-        Map(authorizationHeader)
-      )
       .contentType(MultipartFormData.toString())
       .multipartBody(
         multipartFile(
@@ -83,9 +73,6 @@ abstract class BaseSonatypeClient(
 
     baseRequest
       .post(endpoint)
-      .headers(
-        Map(authorizationHeader)
-      )
       .readTimeout(timeout.milliseconds)
       .response(jsonDecoder)
   }

@@ -10,11 +10,10 @@ class RequestsItSpec extends AnyFreeSpec with Matchers {
   "#uploadBundle" - {
     "should succeed" in {
       val client = new SyncSonatypeClient(sonatypeCredentials)
-      val id = client.uploadBundle(
+      val id = client.uploadBundleFromFile(
         zippedBundle,
         DeploymentName("requests"),
-        Some(PublishingType.USER_MANAGED),
-        retries = 0
+        Some(PublishingType.USER_MANAGED)
       )
       val res = client.checkStatus(id)
 
