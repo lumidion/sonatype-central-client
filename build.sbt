@@ -31,11 +31,11 @@ val versions = new {
   val scala212  = "2.12.19"
   val scala213  = "2.13.13"
   val scala3    = "3.3.3"
-  val sttp      = "4.0.0-M13"
+  val sttp      = "4.0.0-M16"
   val scalatest = "3.2.18"
-  val zioJson   = "0.6.2"
+  val zioJson   = "0.7.0"
   val requests  = "0.8.2"
-  val upickle   = "3.3.0"
+  val upickle   = "3.3.1"
 }
 
 val commonSettings = Seq(
