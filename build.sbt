@@ -1,7 +1,7 @@
 import sbt.url
 import scala.collection.Seq
 
-addCommandAlias("format", "scalafmtAll; scalafmtSbt")
+addCommandAlias("fmt", "scalafmtAll; scalafmtSbt")
 
 val globals = new {
   val projectName      = "sonatype-central-client"
@@ -32,8 +32,8 @@ val versions = new {
   val scala213  = "2.13.13"
   val scala3    = "3.3.3"
   val sttp      = "4.0.0-M16"
-  val scalatest = "3.2.18"
-  val zioJson   = "0.7.0"
+  val scalatest = "3.2.19"
+  val zioJson   = "0.7.1"
   val requests  = "0.8.2"
   val upickle   = "3.3.1"
 }
@@ -48,7 +48,8 @@ val commonSettings = Seq(
         "-deprecation"
       )
     } else Seq.empty
-  }
+  },
+  publishTo := sonatypeCentralPublishToBundle.value
 )
 
 lazy val core = (project in file("modules/core"))
@@ -61,18 +62,27 @@ lazy val requests = (project in file("modules/requests"))
   .settings(
     name := s"${globals.projectName}-requests",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "requests" % versions.requests,
-      "com.lihaoyi" %% "upickle"  % versions.upickle
+      "com.lihaoyi" %% "requests" % versions.requests
     )
   )
   .settings(commonSettings)
-  .dependsOn(core)
+  .dependsOn(core, upickle)
 
 lazy val sttp_core = (project in file("modules/sttp-core"))
   .settings(
     name := s"${globals.projectName}-sttp-core",
     libraryDependencies ++= Seq(
       "com.softwaremill.sttp.client4" %% "core" % versions.sttp
+    )
+  )
+  .settings(commonSettings)
+  .dependsOn(core)
+
+lazy val upickle = (project in file("modules/upickle"))
+  .settings(
+    name := s"${globals.projectName}-upickle",
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "upickle" % versions.upickle
     )
   )
   .settings(commonSettings)
@@ -104,4 +114,4 @@ lazy val root = (project in file("."))
     publish / skip := true,
     name           := globals.projectName
   )
-  .aggregate(core, requests, sttp_core, zio_json)
+  .aggregate(core, requests, upickle, sttp_core, zio_json)

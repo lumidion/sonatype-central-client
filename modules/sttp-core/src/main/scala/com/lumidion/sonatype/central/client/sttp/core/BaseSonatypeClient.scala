@@ -29,8 +29,14 @@ abstract class BaseSonatypeClient(
     credentials: SonatypeCredentials,
     loggingOptions: Option[LoggingOptions] = None
 ) extends GenericSonatypeClient {
+  private val finalLoggingOptions = loggingOptions.getOrElse(LoggingOptions(None, None, None, None))
   private val baseRequest = quickRequest
-    .logSettings(loggingOptions)
+    .logSettings(
+      logRequestBody = finalLoggingOptions.logRequestBody,
+      logResponseBody = finalLoggingOptions.logResponseBody,
+      logRequestHeaders = finalLoggingOptions.logRequestHeaders,
+      logResponseHeaders = finalLoggingOptions.logResponseHeaders
+    )
     .headers(Map(HeaderNames.Authorization -> credentials.toAuthToken))
 
   def uploadBundleRequest(
