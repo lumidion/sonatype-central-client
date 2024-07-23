@@ -4,7 +4,6 @@ import com.lumidion.sonatype.central.client.core.{
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
-  DeploymentState,
   GenericSonatypeClient,
   PublishingType,
   SonatypeCredentials
@@ -19,6 +18,7 @@ import com.lumidion.sonatype.central.client.core.SonatypeCentralError.{
   GenericUserError,
   InternalServerError
 }
+import com.lumidion.sonatype.central.client.upickle.decoders._
 
 import java.io.File
 import requests.{BaseSession, MultiItem, MultiPart, Session}
@@ -30,20 +30,6 @@ class SyncSonatypeClient(
     readTimeout: Int = 300 * 1000,
     connectTimeout: Int = 5000
 ) extends GenericSonatypeClient {
-
-  implicit protected val deploymentIdDecoder: Reader[DeploymentId] =
-    upickle.default.reader[ujson.Str].map(str => DeploymentId(str.value))
-  implicit protected val deploymentNameDecoder: Reader[DeploymentName] = {
-    upickle.default.reader[ujson.Str].map(str => DeploymentName(str.value))
-  }
-  implicit protected val deploymentStateDecoder: Reader[DeploymentState] =
-    upickle.default.reader[ujson.Str].map { str =>
-      DeploymentState
-        .decoder(str.value)
-        .fold(errorMessage => throw new Exception(errorMessage), identity)
-    }
-  implicit protected val checkStatusResponseBodyDecoder: Reader[CheckStatusResponse] =
-    macroR[CheckStatusResponse]
 
   private val authHeader = Map("Authorization" -> credentials.toAuthToken)
 
