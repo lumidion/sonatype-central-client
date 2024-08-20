@@ -35,7 +35,7 @@ val versions = new {
   val scalatest = "3.2.19"
   val zioJson   = "0.7.1"
   val requests  = "0.8.2"
-  val upickle   = "3.3.1"
+  val upickle   = "4.0.0"
 }
 
 val commonSettings = Seq(
