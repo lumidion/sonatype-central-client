@@ -82,7 +82,8 @@ inThisBuild(
         ),
         javas = List(
           JavaSpec.temurin("11")
-        )
+        ),
+        cond = Option("${{ github.event_name == 'pull_request' }}")
       )
     ),
     githubWorkflowIncludeClean   := false,
@@ -96,6 +97,7 @@ inThisBuild(
       WorkflowStep.Run(name = Some("Start Mock Server"), commands = List("./start-mock-server.sh")),
       WorkflowStep.Sbt(name = Some("Run Integration Tests"), commands = List("it"))
     ),
+    githubWorkflowTargetBranches := Seq("main"),
     githubWorkflowPublish := Seq(
       WorkflowStep.Sbt(
         commands = List("ci-release"),
