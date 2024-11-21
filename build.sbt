@@ -52,8 +52,7 @@ inThisBuild(
       JavaSpec.temurin("8"),
       JavaSpec.temurin("11")
     ),
-    githubWorkflowGeneratedCI ++= Seq(
-    ),
+    githubWorkflowScalaVersions := crossScalaVersionsGlobal,
     githubWorkflowAddedJobs ++= Seq(
       WorkflowJob(
         id = "mima_check",
@@ -105,8 +104,6 @@ inThisBuild(
         )
       )
     )
-    // The following line is needed to set the versions for the github workflow generator
-//    crossScalaVersions := crossScalaVersionsGlobal
   )
 )
 
