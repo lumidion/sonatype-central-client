@@ -10,6 +10,10 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 addCommandAlias("fmt", "scalafmtAll; scalafmtSbt; mock_server/scalafmtAll")
 addCommandAlias("it", "integration_test/test")
 addCommandAlias("compileAll", "+compile; test:compile; mock_server/compile")
+addCommandAlias(
+  "mimaChecks",
+  "core/mimaReportBinaryIssues; requests/mimaReportBinaryIssues; sttp_core/mimaReportBinaryIssues; upickle/mimaReportBinaryIssues; zio_json/mimaReportBinaryIssues"
+)
 
 val globals = new {
   val projectName      = "sonatype-central-client"
@@ -47,6 +51,7 @@ inThisBuild(
     scalacOptions ++= Seq("-feature"),
     versionScheme          := Some("semver-spec"),
     sonatypeCredentialHost := sonatypeCentralHost,
+//    mimaPreviousArtifacts ++= previousStableVersion.value.map(organization.value %% name.value % _).toSet,
     githubWorkflowJavaVersions := Seq(
       JavaSpec.temurin("8"),
       JavaSpec.temurin("11")
@@ -106,6 +111,12 @@ inThisBuild(
   )
 )
 
+val mimaSettings = Seq(
+  mimaPreviousArtifacts ++= previousStableVersion.value
+    .map(organization.value %% name.value % _)
+    .toSet
+)
+
 val commonSettings = Seq(
   crossScalaVersions := crossScalaVersionsGlobal,
   scalacOptions ++= {
@@ -123,6 +134,7 @@ lazy val core = (project in file("modules/core"))
   .settings(
     name := s"${globals.projectName}-core"
   )
+  .settings(mimaSettings)
   .settings(commonSettings)
 
 lazy val requests = (project in file("modules/requests"))
@@ -132,6 +144,7 @@ lazy val requests = (project in file("modules/requests"))
       "com.lihaoyi" %% "requests" % versions.requests
     )
   )
+  .settings(mimaSettings)
   .settings(commonSettings)
   .dependsOn(core, upickle)
 
@@ -142,6 +155,7 @@ lazy val sttp_core = (project in file("modules/sttp-core"))
       "com.softwaremill.sttp.client4" %% "core" % versions.sttp
     )
   )
+  .settings(mimaSettings)
   .settings(commonSettings)
   .dependsOn(core)
 
@@ -152,6 +166,7 @@ lazy val upickle = (project in file("modules/upickle"))
       "com.lihaoyi" %% "upickle" % versions.upickle
     )
   )
+  .settings(mimaSettings)
   .settings(commonSettings)
   .dependsOn(core)
 
@@ -162,6 +177,7 @@ lazy val zio_json = (project in file("modules/zio-json"))
       "dev.zio" %% "zio-json" % versions.zioJson
     )
   )
+  .settings(mimaSettings)
   .settings(commonSettings)
   .dependsOn(sttp_core)
 
@@ -174,6 +190,7 @@ lazy val integration_test = (project in file("modules/integration-test"))
       "com.softwaremill.sttp.client4" %% "zio-json"  % versions.sttp      % Test
     )
   )
+  .settings(mimaSettings)
   .dependsOn(requests, sttp_core, zio_json)
 
 lazy val mock_server = (project in file("modules/mock-server"))
