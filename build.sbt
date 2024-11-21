@@ -17,6 +17,20 @@ val globals = new {
   val organizationName = "com.lumidion"
 }
 
+val versions = new {
+  val scala212  = "2.12.19"
+  val scala213  = "2.13.14"
+  val scala3    = "3.3.3"
+  val sttp      = "4.0.0-M16"
+  val scalatest = "3.2.19"
+  val zioHttp   = "3.0.1"
+  val zioJson   = "0.7.2"
+  val requests  = "0.9.0"
+  val upickle   = "3.3.1"
+}
+
+lazy val crossScalaVersionsGlobal = Seq(versions.scala212, versions.scala213, versions.scala3)
+
 inThisBuild(
   List(
     name         := globals.projectName,
@@ -91,23 +105,13 @@ inThisBuild(
         )
       )
     )
+    // The following line is needed to set the versions for the github workflow generator
+//    crossScalaVersions := crossScalaVersionsGlobal
   )
 )
 
-val versions = new {
-  val scala212  = "2.12.19"
-  val scala213  = "2.13.14"
-  val scala3    = "3.3.3"
-  val sttp      = "4.0.0-M16"
-  val scalatest = "3.2.19"
-  val zioHttp   = "3.0.1"
-  val zioJson   = "0.7.2"
-  val requests  = "0.9.0"
-  val upickle   = "3.3.1"
-}
-
 val commonSettings = Seq(
-  crossScalaVersions := Seq(versions.scala212, versions.scala213, versions.scala3),
+  crossScalaVersions := crossScalaVersionsGlobal,
   scalacOptions ++= {
     if (scalaVersion.value == versions.scala3) {
       Seq(
