@@ -27,8 +27,9 @@ import sttp.model.MediaType.MultipartFormData
 
 abstract class BaseSonatypeClient(
     credentials: SonatypeCredentials,
-    loggingOptions: Option[LoggingOptions] = None
-) extends GenericSonatypeClient {
+    loggingOptions: Option[LoggingOptions] = None,
+    overrideEndpoint: Option[String] = None
+) extends GenericSonatypeClient(overrideEndpoint) {
   private val finalLoggingOptions = loggingOptions.getOrElse(LoggingOptions(None, None, None, None))
   private val baseRequest = quickRequest
     .logSettings(

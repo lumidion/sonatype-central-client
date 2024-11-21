@@ -1,0 +1,7 @@
+services:
+  mock-server:
+    container_name: sonatype-central-mock-server
+    ports:
+      - 8080:8080
+    build:
+      context: '.'

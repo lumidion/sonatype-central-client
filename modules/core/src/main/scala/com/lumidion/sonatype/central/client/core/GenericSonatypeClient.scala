@@ -1,7 +1,8 @@
 package com.lumidion.sonatype.central.client.core
 
-abstract class GenericSonatypeClient {
-  protected val clientBaseUrl         = s"https://central.sonatype.com/api/v1/publisher"
+abstract class GenericSonatypeClient(overrideEndpoint: Option[String]) {
+  private val host                    = overrideEndpoint.getOrElse("https://central.sonatype.com")
+  protected val clientBaseUrl         = s"$host/api/v1/publisher"
   protected val clientUploadBundleUrl = s"$clientBaseUrl/upload"
   protected val clientCheckStatusUrl  = s"$clientBaseUrl/status"
   protected def clientUpdateDeploymentUrl(id: DeploymentId): String =

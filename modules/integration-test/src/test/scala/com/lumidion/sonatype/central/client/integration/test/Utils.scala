@@ -9,12 +9,18 @@ object Utils {
     sys.env.getOrElse(key, throw new Exception(s"Expected $key to be present in environment"))
   }
 
-  lazy val sonatypeCredentials: SonatypeCredentials = {
+  lazy val liveSonatypeCredentials: SonatypeCredentials = {
     val username = getFromEnvOrThrow("SONATYPE_USERNAME")
     val password = getFromEnvOrThrow("SONATYPE_PASSWORD")
 
     SonatypeCredentials(username, password)
   }
+
+  lazy val mockServerSonatypeCredentials: SonatypeCredentials =
+    SonatypeCredentials("admin", "admin")
+
+  lazy val invalidMockServerCredentials: SonatypeCredentials =
+    SonatypeCredentials("invalid", "invalid")
 
   lazy val zippedBundle: File = {
     val path = getClass.getResource("/readme.zip").getPath
