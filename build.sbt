@@ -57,6 +57,7 @@ inThisBuild(
         "check",
         "Check Formatting",
         List(
+          WorkflowStep.Use(UseRef.Public("actions", "checkout", "v4"), Map("fetch-depth" -> "0")),
           WorkflowStep.Use(UseRef.Public("coursier", "setup-action", "v1")),
           WorkflowStep.Sbt(
             name = Some("Check Formatting"),
