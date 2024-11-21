@@ -9,7 +9,7 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 
 addCommandAlias("fmt", "scalafmtAll; scalafmtSbt; mock_server/scalafmtAll")
 addCommandAlias("it", "integration_test/test")
-addCommandAlias("compileAll", "+compile; test:compile; mock_server/compile")
+addCommandAlias("compileAll", "+compile; integration_test/test:compile; mock_server/compile")
 addCommandAlias(
   "mimaChecks",
   "core/mimaReportBinaryIssues; requests/mimaReportBinaryIssues; sttp_core/mimaReportBinaryIssues; upickle/mimaReportBinaryIssues; zio_json/mimaReportBinaryIssues"
@@ -51,7 +51,6 @@ inThisBuild(
     scalacOptions ++= Seq("-feature"),
     versionScheme          := Some("semver-spec"),
     sonatypeCredentialHost := sonatypeCentralHost,
-//    mimaPreviousArtifacts ++= previousStableVersion.value.map(organization.value %% name.value % _).toSet,
     githubWorkflowJavaVersions := Seq(
       JavaSpec.temurin("8"),
       JavaSpec.temurin("11")
@@ -92,7 +91,7 @@ inThisBuild(
     githubWorkflowPublishTargetBranches :=
       Seq(RefPredicate.StartsWith(Ref.Tag("v"))),
     githubWorkflowBuild := Seq(
-      WorkflowStep.Sbt(name = Some("Build"), commands = List("compile", "test:compile")),
+      WorkflowStep.Sbt(name = Some("Build"), commands = List("compile", "integration_test/test:compile")),
       WorkflowStep.Run(name = Some("Start Mock Server"), commands = List("./start-mock-server.sh")),
       WorkflowStep.Sbt(name = Some("Run Integration Tests"), commands = List("it"))
     ),
@@ -183,8 +182,9 @@ lazy val zio_json = (project in file("modules/zio-json"))
 
 lazy val integration_test = (project in file("modules/integration-test"))
   .settings(
-    publish / skip := true,
-    name           := "it",
+    Compile / run / fork := true,
+    publish / skip       := true,
+    name                 := "it",
     libraryDependencies ++= Seq(
       "org.scalatest"                 %% "scalatest" % versions.scalatest % Test,
       "com.softwaremill.sttp.client4" %% "zio-json"  % versions.sttp      % Test
@@ -218,4 +218,4 @@ lazy val root = (project in file("."))
     publish / skip := true,
     name           := globals.projectName
   )
-  .aggregate(core, requests, upickle, sttp_core, zio_json, integration_test)
+  .aggregate(core, requests, upickle, sttp_core, zio_json)
