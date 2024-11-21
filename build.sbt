@@ -1,7 +1,16 @@
 import sbt.url
+import sbtghactions.GenerativePlugin.autoImport.{
+  githubWorkflowPublish,
+  githubWorkflowPublishTargetBranches,
+  JavaSpec
+}
 import scala.collection.Seq
+import xerial.sbt.Sonatype.sonatypeCentralHost
 
-addCommandAlias("fmt", "scalafmtAll; scalafmtSbt")
+addCommandAlias("fmt", "scalafmtAll; scalafmtSbt; mock_server/scalafmtAll")
+addCommandAlias("it", "integration_test/test")
+addCommandAlias("compileAll", "compile; test:compile; mock_server/compile")
+addCommandAlias("compileAllAcrossVersions", "+compile; test:compile; mock_server/compile")
 
 val globals = new {
   val projectName      = "sonatype-central-client"
@@ -23,18 +32,76 @@ inThisBuild(
       )
     ),
     scalacOptions ++= Seq("-feature"),
-    versionScheme := Some("semver-spec")
+    versionScheme          := Some("semver-spec"),
+    sonatypeCredentialHost := sonatypeCentralHost,
+    githubWorkflowJavaVersions := Seq(
+      JavaSpec.temurin("8"),
+      JavaSpec.temurin("11")
+    ),
+    githubWorkflowGeneratedCI ++= Seq(
+    ),
+    githubWorkflowAddedJobs ++= Seq(
+      WorkflowJob(
+        id = "mima_check",
+        name = "Mima Check",
+        steps = List(
+          WorkflowStep.Use(UseRef.Public("actions", "checkout", "v4"), Map("fetch-depth" -> "0")),
+          WorkflowStep.Use(UseRef.Public("coursier", "setup-action", "v1"))
+        ) ++ WorkflowStep.SetupJava(List(JavaSpec.temurin("21"))) :+ WorkflowStep.Sbt(
+          List("mimaChecks")
+        ),
+        cond = Option("${{ github.event_name == 'pull_request' }}"),
+        javas = List(JavaSpec.temurin("21"))
+      ),
+      WorkflowJob(
+        "check",
+        "Check Formatting",
+        List(
+          WorkflowStep.Use(UseRef.Public("coursier", "setup-action", "v1")),
+          WorkflowStep.Sbt(
+            name = Some("Check Formatting"),
+            commands = List(s"scalafmtCheckAll")
+          )
+        ),
+        javas = List(
+          JavaSpec.temurin("11")
+        )
+      )
+    ),
+    githubWorkflowIncludeClean   := false,
+    githubWorkflowArtifactUpload := false,
+    githubWorkflowTargetTags ++= Seq("v*"),
+    githubWorkflowPublishTargetBranches :=
+      Seq(RefPredicate.StartsWith(Ref.Tag("v"))),
+    githubWorkflowBuild := Seq(
+      WorkflowStep.Sbt(name = Some("Build"), commands = List("compileAll")),
+      WorkflowStep.Run(name = Some("Start Mock Server"), commands = List("./start-mock-server.sh")),
+      WorkflowStep.Sbt(name = Some("Run Integration Tests"), commands = List("it"))
+    ),
+    githubWorkflowPublish := Seq(
+      WorkflowStep.Sbt(
+        commands = List("ci-release"),
+        name = Some("Publish project"),
+        env = Map(
+          "PGP_PASSPHRASE"    -> "${{ secrets.PGP_PASSPHRASE }}",
+          "PGP_SECRET"        -> "${{ secrets.PGP_SECRET }}",
+          "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+          "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}"
+        )
+      )
+    )
   )
 )
 
 val versions = new {
   val scala212  = "2.12.19"
-  val scala213  = "2.13.13"
+  val scala213  = "2.13.14"
   val scala3    = "3.3.3"
   val sttp      = "4.0.0-M16"
   val scalatest = "3.2.19"
-  val zioJson   = "0.7.1"
-  val requests  = "0.8.2"
+  val zioHttp   = "3.0.1"
+  val zioJson   = "0.7.2"
+  val requests  = "0.9.0"
   val upickle   = "3.3.1"
 }
 
@@ -48,8 +115,7 @@ val commonSettings = Seq(
         "-deprecation"
       )
     } else Seq.empty
-  },
-  publishTo := sonatypeCentralPublishToBundle.value
+  }
 )
 
 lazy val core = (project in file("modules/core"))
@@ -109,9 +175,29 @@ lazy val integration_test = (project in file("modules/integration-test"))
   )
   .dependsOn(requests, sttp_core, zio_json)
 
+lazy val mock_server = (project in file("modules/mock-server"))
+  .settings(
+    assembly / assemblyJarName := "mock-server.jar",
+    assembly / target          := file("./output"),
+    ThisBuild / assemblyMergeStrategy := {
+      case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
+      case x =>
+        val oldStrategy = (ThisBuild / assemblyMergeStrategy).value
+        oldStrategy(x)
+    },
+    crossScalaVersions := Seq(versions.scala3),
+    publish / skip     := true,
+    name               := "mock-server",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-http" % versions.zioHttp
+    )
+  )
+  .settings(commonSettings)
+  .dependsOn(core, zio_json)
+
 lazy val root = (project in file("."))
   .settings(
     publish / skip := true,
     name           := globals.projectName
   )
-  .aggregate(core, requests, upickle, sttp_core, zio_json)
+  .aggregate(core, requests, upickle, sttp_core, zio_json, integration_test)

@@ -28,8 +28,9 @@ import upickle.default._
 class SyncSonatypeClient(
     credentials: SonatypeCredentials,
     readTimeout: Int = 300 * 1000,
-    connectTimeout: Int = 5000
-) extends GenericSonatypeClient {
+    connectTimeout: Int = 5000,
+    overrideEndpoint: Option[String] = None
+) extends GenericSonatypeClient(overrideEndpoint) {
 
   private val authHeader = Map("Authorization" -> credentials.toAuthToken)
 
@@ -67,10 +68,12 @@ class SyncSonatypeClient(
     if (response.is5xx && totalAwaitTime <= awaitTimeout) {
       Thread.sleep(timeoutInterval)
       withRetry(request, timeoutInterval * 2, totalAwaitTime + timeoutInterval)
-    } else if (!response.is2xx) {
+    } else if (response.is5xx) {
       throw InternalServerError(
         s"Sonatype Central returned ${response.statusCode}\n${response.text()}"
       )
+    } else if (response.statusCode == 404) {
+      response
     } else if (response.statusCode == 401 || response.statusCode == 403) {
       throw AuthorizationError(
         s"Sonatype Central returned ${response.statusCode}. Error message: ${response.text()}"
@@ -136,7 +139,7 @@ class SyncSonatypeClient(
       publishingType: Option[PublishingType],
       timeout: Int
   ): DeploymentId = {
-    val deploymentIdParams = Map(
+    val deploymentNameParams = Map(
       (UploadBundleRequestParams.BUNDLE_NAME.unapply, deploymentName.unapply)
     )
     val publishingTypeParams = publishingType
@@ -144,7 +147,7 @@ class SyncSonatypeClient(
         Map(UploadBundleRequestParams.BUNDLE_PUBLISHING_TYPE.unapply -> publishingType.unapply)
       )
       .getOrElse(Seq.empty)
-    val finalParamsAsString = paramsToString(deploymentIdParams ++ publishingTypeParams)
+    val finalParamsAsString = paramsToString(deploymentNameParams ++ publishingTypeParams)
     val finalEndpoint       = s"$clientUploadBundleUrl?$finalParamsAsString"
 
     val response = withRetry(
@@ -163,7 +166,7 @@ class SyncSonatypeClient(
   def checkStatus(
       deploymentId: DeploymentId,
       timeout: Int = 5000
-  ): CheckStatusResponse = {
+  ): Option[CheckStatusResponse] = {
     val deploymentIdParams = Map(
       (CheckStatusRequestParams.DEPLOYMENT_ID.unapply -> deploymentId.unapply)
     )
@@ -178,6 +181,10 @@ class SyncSonatypeClient(
       awaitTimeout = timeout
     )
 
-    read[CheckStatusResponse](response.text())
+    if (response.statusCode == 404) {
+      None
+    } else {
+      Some(read[CheckStatusResponse](response.text()))
+    }
   }
 }

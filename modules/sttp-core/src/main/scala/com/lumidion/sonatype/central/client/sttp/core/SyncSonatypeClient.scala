@@ -15,8 +15,9 @@ import sttp.client4.logging.LoggingOptions
 class SyncSonatypeClient(
     credentials: SonatypeCredentials,
     backend: SyncBackend,
-    loggingOptions: Option[LoggingOptions] = None
-) extends BaseSonatypeClient(credentials, loggingOptions) {
+    loggingOptions: Option[LoggingOptions] = None,
+    overrideEndpoint: Option[String] = None
+) extends BaseSonatypeClient(credentials, loggingOptions, overrideEndpoint = overrideEndpoint) {
   def uploadBundle(
       localBundlePath: File,
       deploymentName: DeploymentName,

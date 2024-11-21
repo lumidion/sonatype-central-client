@@ -1,0 +1,1 @@
+docker compose down && sbt 'mock_server/assembly' && docker compose up --build -d
