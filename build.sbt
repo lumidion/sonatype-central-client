@@ -93,7 +93,10 @@ inThisBuild(
       Seq(RefPredicate.StartsWith(Ref.Tag("v"))),
     githubWorkflowBuild := Seq(
       WorkflowStep
-        .Sbt(name = Some("Build"), commands = List("compile", "integration_test/test:compile")),
+        .Sbt(
+          name = Some("Build"),
+          commands = List("clean", "compile", "integration_test/test:compile")
+        ),
       WorkflowStep.Run(name = Some("Start Mock Server"), commands = List("./start-mock-server.sh")),
       WorkflowStep.Sbt(name = Some("Run Integration Tests"), commands = List("it"))
     ),
