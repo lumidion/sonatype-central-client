@@ -55,7 +55,7 @@ jobs:
         run: sbt '++ ${{ matrix.scala }}' githubWorkflowCheck
 
       - name: Build
-        run: sbt '++ ${{ matrix.scala }}' compileAll
+        run: 'sbt ''++ ${{ matrix.scala }}'' compile test:compile'
 
       - name: Start Mock Server
         run: ./start-mock-server.sh

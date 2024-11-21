@@ -9,8 +9,7 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 
 addCommandAlias("fmt", "scalafmtAll; scalafmtSbt; mock_server/scalafmtAll")
 addCommandAlias("it", "integration_test/test")
-addCommandAlias("compileAll", "compile; test:compile; mock_server/compile")
-addCommandAlias("compileAllAcrossVersions", "+compile; test:compile; mock_server/compile")
+addCommandAlias("compileAll", "+compile; test:compile; mock_server/compile")
 
 val globals = new {
   val projectName      = "sonatype-central-client"
@@ -88,7 +87,7 @@ inThisBuild(
     githubWorkflowPublishTargetBranches :=
       Seq(RefPredicate.StartsWith(Ref.Tag("v"))),
     githubWorkflowBuild := Seq(
-      WorkflowStep.Sbt(name = Some("Build"), commands = List("compileAll")),
+      WorkflowStep.Sbt(name = Some("Build"), commands = List("compile", "test:compile")),
       WorkflowStep.Run(name = Some("Start Mock Server"), commands = List("./start-mock-server.sh")),
       WorkflowStep.Sbt(name = Some("Run Integration Tests"), commands = List("it"))
     ),
