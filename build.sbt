@@ -183,15 +183,14 @@ lazy val zio_json = (project in file("modules/zio-json"))
 
 lazy val integration_test = (project in file("modules/integration-test"))
   .settings(
-    Compile / run / fork := true,
-    publish / skip       := true,
-    name                 := "it",
+    publish / skip := true,
+    name           := "it",
     libraryDependencies ++= Seq(
       "org.scalatest"                 %% "scalatest" % versions.scalatest % Test,
       "com.softwaremill.sttp.client4" %% "zio-json"  % versions.sttp      % Test
     )
   )
-  .settings(mimaSettings)
+  .settings(commonSettings)
   .dependsOn(requests, sttp_core, zio_json)
 
 lazy val mock_server = (project in file("modules/mock-server"))
@@ -219,4 +218,4 @@ lazy val root = (project in file("."))
     publish / skip := true,
     name           := globals.projectName
   )
-  .aggregate(core, requests, upickle, sttp_core, zio_json)
+  .aggregate(core, requests, upickle, sttp_core, zio_json, integration_test)
