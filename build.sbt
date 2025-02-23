@@ -6,6 +6,7 @@ import sbtghactions.GenerativePlugin.autoImport.{
 }
 import scala.collection.Seq
 import xerial.sbt.Sonatype.sonatypeCentralHost
+import Dependencies.versions
 
 addCommandAlias("fmt", "scalafmtAll; scalafmtSbt; mock_server/scalafmtAll")
 addCommandAlias("it", "integration_test/test")
@@ -18,18 +19,6 @@ addCommandAlias(
 val globals = new {
   val projectName      = "sonatype-central-client"
   val organizationName = "com.lumidion"
-}
-
-val versions = new {
-  val scala212  = "2.12.19"
-  val scala213  = "2.13.14"
-  val scala3    = "3.3.3"
-  val sttp      = "4.0.0-M16"
-  val scalatest = "3.2.19"
-  val zioHttp   = "3.0.1"
-  val zioJson   = "0.7.2"
-  val requests  = "0.9.0"
-  val upickle   = "3.3.1"
 }
 
 lazy val crossScalaVersionsGlobal = Seq(versions.scala212, versions.scala213, versions.scala3)
@@ -52,7 +41,6 @@ inThisBuild(
     versionScheme          := Some("semver-spec"),
     sonatypeCredentialHost := sonatypeCentralHost,
     githubWorkflowJavaVersions := Seq(
-      JavaSpec.temurin("8"),
       JavaSpec.temurin("11")
     ),
     githubWorkflowScalaVersions := crossScalaVersionsGlobal,
