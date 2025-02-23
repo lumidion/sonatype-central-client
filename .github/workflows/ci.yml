@@ -114,6 +114,8 @@ jobs:
           java-version: 21
           cache: sbt
 
+      - uses: sbt/setup-sbt@v1
+
       - run: sbt mimaChecks
 
   check:
@@ -131,6 +133,8 @@ jobs:
           fetch-depth: 0
 
       - uses: coursier/setup-action@v1
+
+      - uses: sbt/setup-sbt@v1
 
       - name: Check Formatting
         run: sbt scalafmtCheckAll
