@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.12.19, 2.13.14, 3.3.3]
+        scala: [2.12.20, 2.13.16, 3.3.5]
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
@@ -31,14 +31,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Java (temurin@11)
-        if: matrix.java == 'temurin@11'
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 11
-          cache: sbt
 
       - name: Setup Java (temurin@11)
         if: matrix.java == 'temurin@11'
@@ -70,7 +62,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.12.18]
+        scala: [2.12.20]
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
@@ -78,14 +70,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Java (temurin@11)
-        if: matrix.java == 'temurin@11'
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 11
-          cache: sbt
 
       - name: Setup Java (temurin@11)
         if: matrix.java == 'temurin@11'

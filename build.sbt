@@ -51,8 +51,9 @@ inThisBuild(
         steps = List(
           WorkflowStep.Use(UseRef.Public("actions", "checkout", "v4"), Map("fetch-depth" -> "0")),
           WorkflowStep.Use(UseRef.Public("coursier", "setup-action", "v1"))
-        ) ++ WorkflowStep.SetupJava(List(JavaSpec.temurin("21"))) :+ WorkflowStep.Sbt(
-          List("mimaChecks")
+        ) ++ WorkflowStep.SetupJava(List(JavaSpec.temurin("21"))) ++ List(
+          WorkflowStep.Use(UseRef.Public("sbt", "setup-sbt", "v1")),
+          WorkflowStep.Sbt(List("mimaChecks"))
         ),
         cond = Option("${{ github.event_name == 'pull_request' }}"),
         javas = List(JavaSpec.temurin("21"))
@@ -63,6 +64,7 @@ inThisBuild(
         List(
           WorkflowStep.Use(UseRef.Public("actions", "checkout", "v4"), Map("fetch-depth" -> "0")),
           WorkflowStep.Use(UseRef.Public("coursier", "setup-action", "v1")),
+          WorkflowStep.Use(UseRef.Public("sbt", "setup-sbt", "v1")),
           WorkflowStep.Sbt(
             name = Some("Check Formatting"),
             commands = List(s"scalafmtCheckAll")
