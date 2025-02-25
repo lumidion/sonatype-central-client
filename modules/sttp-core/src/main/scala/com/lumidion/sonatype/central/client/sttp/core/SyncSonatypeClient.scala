@@ -23,6 +23,7 @@ class SyncSonatypeClient(
     new BaseSonatypeClient(credentials, loggingOptions, overrideEndpoint = overrideEndpoint)
 
   /** Uploads a bundle to Sonatype Central for validation and potential deployment
+    *
     * @param localBundlePath
     *   The file to be uploaded
     * @param deploymentName
@@ -31,7 +32,18 @@ class SyncSonatypeClient(
     *   The publishing type. `AUTOMATIC` will publish the deployment immediately upon validation,
     *   whereas `USER_MANAGED` will require the user to manually publish it in the console or via
     *   another api call.
+    * @example
+    *   {{{
+    *  val file = new File("mybundle.zip")
+    *
+    *  val deploymentId = client.uploadBundleFromFile(
+    *    file,
+    *    DeploymentName("com.testing.project-1.0.0"),
+    *    Some(PublishingType.AUTOMATIC)
+    *  )
+    *   }}}
     * @return
+    *   A sttp response with a json body parsed to a deployment id
     */
   def uploadBundle(
       localBundlePath: File,
@@ -52,6 +64,19 @@ class SyncSonatypeClient(
     *   sttp.client4.ziojson.asJson from the "com.softwaremill.sttp.client4" %% "zio-json" lib
     * @tparam E
     *   The error type of the json decoder
+    * @example
+    *   {{{
+    *   for {
+    *       id <- client
+    *         .uploadBundle(
+    *           zippedBundle,
+    *           DeploymentName("com.testing.project-1.0.0"),
+    *           Some(PublishingType.USER_MANAGED)
+    *         )
+    *         .body
+    *       status <- client.checkStatus(id)(asJson[CheckStatusResponse]).body
+    *     } yield ()
+    *   }}}
     * @return
     *   A sttp response that contains a parsed json body
     */
@@ -66,8 +91,22 @@ class SyncSonatypeClient(
   }
 
   /** Deletes a deployment that has not yet been published.
+    *
     * @param deploymentId
     *   The deployment id (generally received from the `uploadBundle` function)
+    * @example
+    *   {{{
+    *   for {
+    *       id <- client
+    *         .uploadBundle(
+    *           zippedBundle,
+    *           DeploymentName("com.testing.project-1.0.0"),
+    *           Some(PublishingType.USER_MANAGED)
+    *         )
+    *         .body
+    *       _ = client.deleteDeployment(id)
+    *     } yield ()
+    *   }}}
     * @return
     *   `Response[Unit]`
     */
@@ -79,6 +118,19 @@ class SyncSonatypeClient(
   /** Publishes a deployment that is currently in the "validated" state.
     * @param deploymentId
     *   The deployment id (generally received from the `uploadBundle` function)
+    * @example
+    *   {{{
+    *   for {
+    *       id <- client
+    *         .uploadBundle(
+    *           zippedBundle,
+    *           DeploymentName("com.testing.project-1.0.0"),
+    *           Some(PublishingType.USER_MANAGED)
+    *         )
+    *         .body
+    *       _ = client.publishValidatedDeployment(id)
+    *     } yield ()
+    *   }}}
     * @return
     *   `Response[Unit]`
     */

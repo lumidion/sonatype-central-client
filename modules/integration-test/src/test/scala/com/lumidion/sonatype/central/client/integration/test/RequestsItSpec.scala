@@ -23,16 +23,15 @@ class RequestsItSpec extends AnyFreeSpec with Matchers {
     overrideEndpoint = Some("http://localhost:8080")
   )
 
-  val liveClient = new SyncSonatypeClient(
-    liveSonatypeCredentials
-  )
-
   private def testAgainstEndpoints(testName: String, isMock: Boolean = true)(
       func: SyncSonatypeClient => Unit
   ): Unit = {
     testName - {
       if (!isMock) {
         "should succeed against production endpoint" in {
+          val liveClient = new SyncSonatypeClient(
+            liveSonatypeCredentials
+          )
           func(liveClient)
         }
       }
@@ -92,7 +91,8 @@ class RequestsItSpec extends AnyFreeSpec with Matchers {
 
     publishDeploymentRes.isDefined shouldBe true
 
-    val notFoundPublishDeploymentRes = client.publishValidatedDeployment(DeploymentId(UUID.randomUUID().toString))
+    val notFoundPublishDeploymentRes =
+      client.publishValidatedDeployment(DeploymentId(UUID.randomUUID().toString))
 
     notFoundPublishDeploymentRes.isEmpty shouldBe true
   }

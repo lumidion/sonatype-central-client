@@ -1,10 +1,20 @@
 package com.lumidion.sonatype.central.client.integration.test
 
-import com.lumidion.sonatype.central.client.core.{CheckStatusResponse, DeploymentName, DeploymentState, PublishingType}
+import com.lumidion.sonatype.central.client.core.{
+  CheckStatusResponse,
+  DeploymentName,
+  DeploymentState,
+  PublishingType
+}
 import com.lumidion.sonatype.central.client.core.DeploymentState.VALIDATED
-import com.lumidion.sonatype.central.client.integration.test.Utils.{liveSonatypeCredentials, mockServerSonatypeCredentials, zippedBundle}
+import com.lumidion.sonatype.central.client.integration.test.Utils.{
+  liveSonatypeCredentials,
+  mockServerSonatypeCredentials,
+  zippedBundle
+}
 import com.lumidion.sonatype.central.client.sttp.core.SyncSonatypeClient
 import com.lumidion.sonatype.central.client.zio.json.decoders._
+
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.httpurlconnection.HttpURLConnectionBackend
@@ -19,17 +29,16 @@ class SyncSttpItSpec extends AnyFreeSpec with Matchers {
     overrideEndpoint = Some("http://localhost:8080")
   )
 
-  private val liveClient = new SyncSonatypeClient(
-    liveSonatypeCredentials,
-    backend
-  )
-
   private def testAgainstEndpoints(testName: String, isMock: Boolean = true)(
       func: SyncSonatypeClient => Unit
   ): Unit = {
     testName - {
       if (!isMock) {
         "should succeed against production endpoint" in {
+          val liveClient = new SyncSonatypeClient(
+            liveSonatypeCredentials,
+            backend
+          )
           func(liveClient)
         }
       }
@@ -86,9 +95,9 @@ class SyncSttpItSpec extends AnyFreeSpec with Matchers {
         )
         .body
       status <- client.checkStatus(id)(asJson[CheckStatusResponse]).body
-      _ = status.deploymentState shouldBe DeploymentState.VALIDATED
+      _                       = status.deploymentState shouldBe DeploymentState.VALIDATED
       deploymentPublishingRes = client.publishValidatedDeployment(id)
-      _ = deploymentPublishingRes.isSuccess shouldBe true
+      _                       = deploymentPublishingRes.isSuccess shouldBe true
       finalStatus <- client.checkStatus(id)(asJson[CheckStatusResponse]).body
       _ = finalStatus.deploymentState shouldBe DeploymentState.PUBLISHED
     } yield ()
