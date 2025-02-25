@@ -25,7 +25,7 @@ import sttp.client4.logging.LoggingOptions
 import sttp.model.HeaderNames
 import sttp.model.MediaType.MultipartFormData
 
-abstract class BaseSonatypeClient(
+class BaseSonatypeClient(
     credentials: SonatypeCredentials,
     loggingOptions: Option[LoggingOptions] = None,
     overrideEndpoint: Option[String] = None
@@ -82,5 +82,21 @@ abstract class BaseSonatypeClient(
       .post(endpoint)
       .readTimeout(timeout.milliseconds)
       .response(jsonDecoder)
+  }
+
+  def deleteDeploymentRequest(deploymentId: DeploymentId): Request[Unit] = {
+    val endpoint = uri"${clientDeleteDeploymentUrl(deploymentId)}"
+
+    baseRequest
+      .delete(endpoint)
+      .mapResponse(_ => ())
+  }
+
+  def publishValidatedDeploymentRequest(deploymentId: DeploymentId): Request[Unit] = {
+    val endpoint = uri"${clientPublishValidatedDeploymentUrl(deploymentId)}"
+
+    baseRequest
+      .post(endpoint)
+      .mapResponse(_ => ())
   }
 }

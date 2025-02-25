@@ -93,6 +93,21 @@ class SyncSonatypeClient(
     }
   }
 
+  /** Uploads a bundle to Sonatype Central for validation and potential deployment
+    * @param localBundlePath
+    *   The file to be uploaded
+    * @param deploymentName
+    *   The deployment name that will be shown in the ui in the Sonatype Central portal
+    * @param publishingType
+    *   The publishing type. `AUTOMATIC` will publish the deployment immediately upon validation,
+    *   whereas `USER_MANAGED` will require the user to manually publish it in the console or via
+    *   another api call.
+    * @param timeout
+    *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
+    *   internal server error
+    * @return
+    *   The deployment id
+    */
   def uploadBundleFromFile(
       localBundlePath: File,
       deploymentName: DeploymentName,
@@ -113,6 +128,22 @@ class SyncSonatypeClient(
     )
   }
 
+  /** Uploads a bundle to Sonatype Central for validation and potential deployment
+    *
+    * @param bundleAsBytes
+    *   The file bundle loaded into an array
+    * @param deploymentName
+    *   The deployment name that will be shown in the ui in the Sonatype Central portal
+    * @param publishingType
+    *   The publishing type. `AUTOMATIC` will publish the deployment immediately upon validation,
+    *   whereas `USER_MANAGED` will require the user to manually publish it in the console or via
+    *   another api call.
+    * @param timeout
+    *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
+    *   internal server error
+    * @return
+    *   The deployment id
+    */
   def uploadBundleFromBytes(
       bundleAsBytes: Array[Byte],
       deploymentName: DeploymentName,
@@ -163,6 +194,16 @@ class SyncSonatypeClient(
     DeploymentId((response.text()))
   }
 
+  /** Checks the current status for a deployment
+    * @param deploymentId
+    *   The deployment id (generally received from one of the uploadBundle functions)
+    * @param timeout
+    *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
+    *   internal server error
+    * @return
+    *   `None` if Sonatype Central returns `404` for the request. Otherwise, assuming no error,
+    *   `Some(CheckStatusResponse)`.
+    */
   def checkStatus(
       deploymentId: DeploymentId,
       timeout: Int = 5000
@@ -185,6 +226,70 @@ class SyncSonatypeClient(
       None
     } else {
       Some(read[CheckStatusResponse](response.text()))
+    }
+  }
+
+  /** Deletes a deployment that has not yet been published.
+    * @param deploymentId
+    *   The deployment id (generally received from one of the uploadBundle functions)
+    * @param timeout
+    *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
+    *   internal server error
+    * @return
+    *   `None` if Sonatype Central returns `404` for the request. Otherwise, assuming no error,
+    *   `Some(())`.
+    */
+  def deleteDeployment(
+      deploymentId: DeploymentId,
+      timeout: Int = 5000
+  ): Option[Unit] = {
+
+    val finalEndpoint = clientDeleteDeploymentUrl(deploymentId)
+
+    val response = withRetry(
+      session.delete(
+        finalEndpoint,
+        headers = Map("Content-Type" -> "text/plain")
+      ),
+      awaitTimeout = timeout
+    )
+
+    if (response.statusCode == 404) {
+      None
+    } else {
+      Some(())
+    }
+  }
+
+  /** Publishes a deployment that is currently in the "validated" state.
+    * @param deploymentId
+    *   The deployment id (generally received from one of the uploadBundle functions)
+    * @param timeout
+    *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
+    *   internal server error
+    * @return
+    *   `None` if Sonatype Central returns `404` for the request. Otherwise, assuming no error,
+    *   `Some(())`.
+    */
+  def publishValidatedDeployment(
+      deploymentId: DeploymentId,
+      timeout: Int = 5000
+  ): Option[Unit] = {
+
+    val finalEndpoint = clientPublishValidatedDeploymentUrl(deploymentId)
+
+    val response = withRetry(
+      session.post(
+        finalEndpoint,
+        headers = Map("Content-Type" -> "text/plain")
+      ),
+      awaitTimeout = timeout
+    )
+
+    if (response.statusCode == 404) {
+      None
+    } else {
+      Some(())
     }
   }
 }

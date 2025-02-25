@@ -20,7 +20,7 @@ class DeploymentRepository {
       deploymentName: DeploymentName
   ): UUID = {
     val id = UUID.randomUUID()
-    mutableMap += ((id, (deploymentName, DeploymentState.VALIDATING)))
+    mutableMap += ((id, (deploymentName, DeploymentState.VALIDATED)))
     id
   }
 

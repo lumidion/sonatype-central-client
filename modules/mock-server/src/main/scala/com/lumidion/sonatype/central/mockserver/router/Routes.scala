@@ -32,7 +32,7 @@ object Routes {
           response <- form.get("bundle") match {
             case Some(file) =>
               file match {
-                case FormField.Binary(_, data, contentType, transferEncoding, Some(filename))
+                case FormField.Binary(_, _, contentType, _, Some(filename))
                     if contentType.fullType == "application/octet-stream" =>
                   val deploymentName =
                     DeploymentName(req.queryParam("name").getOrElse(filename))

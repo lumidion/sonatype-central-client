@@ -20,10 +20,10 @@ object Main extends ZIOAppDefault {
       Method.POST / "api" / "v1" / "publisher" / "status" -> getDeploymentStatusRoute(repository),
       Method.POST / "api" / "v1" / "publisher" / "deployment" / uuid(
         "deploymentId"
-      ) -> deleteDeployment(repository),
+      ) -> publishValidatedDeployment(repository),
       Method.DELETE / "api" / "v1" / "publisher" / "deployment" / uuid(
         "deploymentId"
-      ) -> publishValidatedDeployment(repository)
+      ) -> deleteDeployment(repository)
     ) @@ authMiddleware
 
   def run: ZIO[Any, Throwable, Nothing] = Server.serve(routes).provide(Server.default)
