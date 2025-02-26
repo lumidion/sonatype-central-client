@@ -94,6 +94,7 @@ class SyncSonatypeClient(
   }
 
   /** Uploads a bundle to Sonatype Central for validation and potential deployment
+    *
     * @param localBundlePath
     *   The file to be uploaded
     * @param deploymentName
@@ -105,6 +106,26 @@ class SyncSonatypeClient(
     * @param timeout
     *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
     *   internal server error
+    * @example
+    *   {{{
+    *   import com.lumidion.sonatype.central.client.core.{
+    *       DeploymentName,
+    *       PublishingType,
+    *       SonatypeCredentials
+    *     }
+    *   import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
+    *   import java.io.File
+    *
+    *   val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    *   val client              = new SyncSonatypeClient(sonatypeCredentials)
+    *   val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    *   val id = client.uploadBundleFromFile(
+    *     zippedBundle,
+    *     DeploymentName("com.testing.project-1.0.0"),
+    *     Some(PublishingType.USER_MANAGED)
+    *   )
+    *   }}}
     * @return
     *   The deployment id
     */
@@ -141,6 +162,28 @@ class SyncSonatypeClient(
     * @param timeout
     *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
     *   internal server error
+    * @example
+    *   {{{
+    *   import com.lumidion.sonatype.central.client.core.{
+    *       DeploymentName,
+    *       PublishingType,
+    *       SonatypeCredentials
+    *     }
+    *   import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
+    *   import java.io.File
+    *   import java.nio.file.Files
+    *
+    *   val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    *   val client              = new SyncSonatypeClient(sonatypeCredentials)
+    *   val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *   val bundleAsBytes       = Files.readAllBytes(zippedBundle.toPath)
+    *
+    *   val id = client.uploadBundleFromBytes(
+    *     bundleAsBytes,
+    *     DeploymentName("com.testing.project-1.0.0"),
+    *     Some(PublishingType.USER_MANAGED)
+    *   )
+    *   }}}
     * @return
     *   The deployment id
     */
@@ -200,6 +243,28 @@ class SyncSonatypeClient(
     * @param timeout
     *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
     *   internal server error
+    * @example
+    *   {{{
+    *   import com.lumidion.sonatype.central.client.core.{
+    *       DeploymentName,
+    *       PublishingType,
+    *       SonatypeCredentials
+    *     }
+    *   import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
+    *   import java.io.File
+    *
+    *   val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    *   val client              = new SyncSonatypeClient(sonatypeCredentials)
+    *   val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    *   val id = client.uploadBundleFromFile(
+    *     zippedBundle,
+    *     DeploymentName("com.testing.project-1.0.0"),
+    *     Some(PublishingType.USER_MANAGED)
+    *   )
+    *
+    *   val res = client.checkStatus(id)
+    *   }}}
     * @return
     *   `None` if Sonatype Central returns `404` for the request. Otherwise, assuming no error,
     *   `Some(CheckStatusResponse)`.
@@ -235,6 +300,28 @@ class SyncSonatypeClient(
     * @param timeout
     *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
     *   internal server error
+    * @example
+    *   {{{
+    *   import com.lumidion.sonatype.central.client.core.{
+    *       DeploymentName,
+    *       PublishingType,
+    *       SonatypeCredentials
+    *     }
+    *   import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
+    *   import java.io.File
+    *
+    *   val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    *   val client              = new SyncSonatypeClient(sonatypeCredentials)
+    *   val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    *   val id = client.uploadBundleFromFile(
+    *     zippedBundle,
+    *     DeploymentName("com.testing.project-1.0.0"),
+    *     Some(PublishingType.USER_MANAGED)
+    *   )
+    *
+    *   val res = client.deleteDeployment(id)
+    *   }}}
     * @return
     *   `None` if Sonatype Central returns `404` for the request. Otherwise, assuming no error,
     *   `Some(())`.
@@ -267,6 +354,28 @@ class SyncSonatypeClient(
     * @param timeout
     *   The maximum amount of time (in ms) that the function has to retry the call if it receives an
     *   internal server error
+    * @example
+    *   {{{
+    *   import com.lumidion.sonatype.central.client.core.{
+    *       DeploymentName,
+    *       PublishingType,
+    *       SonatypeCredentials
+    *     }
+    *   import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
+    *   import java.io.File
+    *
+    *   val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    *   val client              = new SyncSonatypeClient(sonatypeCredentials)
+    *   val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    *   val id = client.uploadBundleFromFile(
+    *     zippedBundle,
+    *     DeploymentName("com.testing.project-1.0.0"),
+    *     Some(PublishingType.USER_MANAGED)
+    *   )
+    *
+    *   val res = client.publishValidatedDeployment(id)
+    *   }}}
     * @return
     *   `None` if Sonatype Central returns `404` for the request. Otherwise, assuming no error,
     *   `Some(())`.

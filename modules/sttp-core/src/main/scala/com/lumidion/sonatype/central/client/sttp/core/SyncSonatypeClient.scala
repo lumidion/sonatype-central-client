@@ -39,6 +39,7 @@ class SyncSonatypeClient(
     *   PublishingType,
     *   SonatypeCredentials
     * }
+    * import com.lumidion.sonatype.central.client.sttp.core.SyncSonatypeClient
     * import java.io.File
     * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
     *
@@ -87,6 +88,7 @@ class SyncSonatypeClient(
     *   PublishingType,
     *   SonatypeCredentials
     * }
+    * import com.lumidion.sonatype.central.client.sttp.core.SyncSonatypeClient
     * import java.io.File
     * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
     * import sttp.client4.ziojson.asJson
@@ -131,6 +133,7 @@ class SyncSonatypeClient(
     *   PublishingType,
     *   SonatypeCredentials
     * }
+    * import com.lumidion.sonatype.central.client.sttp.core.SyncSonatypeClient
     * import java.io.File
     * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
     *
@@ -168,6 +171,7 @@ class SyncSonatypeClient(
     *   PublishingType,
     *   SonatypeCredentials
     * }
+    * import com.lumidion.sonatype.central.client.sttp.core.SyncSonatypeClient
     * import java.io.File
     * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
     *
