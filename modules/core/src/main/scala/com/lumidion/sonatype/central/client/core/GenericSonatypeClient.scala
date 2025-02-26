@@ -5,9 +5,10 @@ abstract class GenericSonatypeClient(overrideEndpoint: Option[String] = None) {
   protected val clientBaseUrl         = s"$host/api/v1/publisher"
   protected val clientUploadBundleUrl = s"$clientBaseUrl/upload"
   protected val clientCheckStatusUrl  = s"$clientBaseUrl/status"
-  protected def clientUpdateDeploymentUrl(id: DeploymentId): String =
+  protected def clientPublishValidatedDeploymentUrl(id: DeploymentId): String =
     s"$clientBaseUrl/deployment/${id.unapply}"
-  protected def clientDeleteDeploymentUrl(id: DeploymentId): String = clientUpdateDeploymentUrl(id)
+  protected def clientDeleteDeploymentUrl(id: DeploymentId): String =
+    clientPublishValidatedDeploymentUrl(id)
 
   protected val uploadBundleMultipartFileName: String = "bundle"
 }
