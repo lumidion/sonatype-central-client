@@ -34,13 +34,27 @@ class SyncSonatypeClient(
     *   another api call.
     * @example
     *   {{{
-    *  val file = new File("mybundle.zip")
+    * import com.lumidion.sonatype.central.client.core.{
+    *   DeploymentName,
+    *   PublishingType,
+    *   SonatypeCredentials
+    * }
+    * import java.io.File
+    * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
     *
-    *  val deploymentId = client.uploadBundleFromFile(
-    *    file,
-    *    DeploymentName("com.testing.project-1.0.0"),
-    *    Some(PublishingType.AUTOMATIC)
-    *  )
+    * val backend             = HttpURLConnectionBackend()
+    * val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    * val client              = new SyncSonatypeClient(sonatypeCredentials, backend)
+    * val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    * for {
+    *   id <- client
+    *     .uploadBundle(
+    *       zippedBundle,
+    *       DeploymentName("com.testing.project-1.0.0"),
+    *       Some(PublishingType.USER_MANAGED)
+    *     ).body
+    * } yield ()
     *   }}}
     * @return
     *   A sttp response with a json body parsed to a deployment id
@@ -55,6 +69,7 @@ class SyncSonatypeClient(
   }
 
   /** Checks the status of an existing deployment
+    *
     * @param deploymentId
     *   The deployment id (generally received from the `uploadBundle` function)
     * @param timeout
@@ -66,19 +81,34 @@ class SyncSonatypeClient(
     *   The error type of the json decoder
     * @example
     *   {{{
-    *   for {
-    *       id <- client
-    *         .uploadBundle(
-    *           zippedBundle,
-    *           DeploymentName("com.testing.project-1.0.0"),
-    *           Some(PublishingType.USER_MANAGED)
-    *         )
-    *         .body
-    *       status <- client.checkStatus(id)(asJson[CheckStatusResponse]).body
-    *     } yield ()
+    * import com.lumidion.sonatype.central.client.core.{
+    *   CheckStatusResponse
+    *   DeploymentName,
+    *   PublishingType,
+    *   SonatypeCredentials
+    * }
+    * import java.io.File
+    * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
+    * import sttp.client4.ziojson.asJson
+    *
+    * val backend             = HttpURLConnectionBackend()
+    * val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    * val client              = new SyncSonatypeClient(sonatypeCredentials, backend)
+    * val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    * for {
+    *   id <- client
+    *     .uploadBundle(
+    *       zippedBundle,
+    *       DeploymentName("com.testing.project-1.0.0"),
+    *       Some(PublishingType.USER_MANAGED)
+    *     ).body
+    *   status <- client.checkStatus(id)(asJson[CheckStatusResponse]).body
+    * } yield ()
     *   }}}
     * @return
-    *   A sttp response that contains a parsed json body
+    *   A sttp response that contains a parsed json body: status <-
+    *   client.checkStatus(id)(asJson[CheckStatusResponse]).body
     */
   def checkStatus[E](
       deploymentId: DeploymentId,
@@ -96,16 +126,28 @@ class SyncSonatypeClient(
     *   The deployment id (generally received from the `uploadBundle` function)
     * @example
     *   {{{
-    *   for {
-    *       id <- client
-    *         .uploadBundle(
-    *           zippedBundle,
-    *           DeploymentName("com.testing.project-1.0.0"),
-    *           Some(PublishingType.USER_MANAGED)
-    *         )
-    *         .body
-    *       _ = client.deleteDeployment(id)
-    *     } yield ()
+    * import com.lumidion.sonatype.central.client.core.{
+    *   DeploymentName,
+    *   PublishingType,
+    *   SonatypeCredentials
+    * }
+    * import java.io.File
+    * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
+    *
+    * val backend             = HttpURLConnectionBackend()
+    * val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    * val client              = new SyncSonatypeClient(sonatypeCredentials, backend)
+    * val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    * for {
+    *   id <- client
+    *     .uploadBundle(
+    *       zippedBundle,
+    *       DeploymentName("com.testing.project-1.0.0"),
+    *       Some(PublishingType.USER_MANAGED)
+    *     ).body
+    *   _ = client.deleteDeployment(id)
+    * } yield ()
     *   }}}
     * @return
     *   `Response[Unit]`
@@ -116,20 +158,33 @@ class SyncSonatypeClient(
   }
 
   /** Publishes a deployment that is currently in the "validated" state.
+    *
     * @param deploymentId
     *   The deployment id (generally received from the `uploadBundle` function)
     * @example
     *   {{{
-    *   for {
-    *       id <- client
-    *         .uploadBundle(
-    *           zippedBundle,
-    *           DeploymentName("com.testing.project-1.0.0"),
-    *           Some(PublishingType.USER_MANAGED)
-    *         )
-    *         .body
-    *       _ = client.publishValidatedDeployment(id)
-    *     } yield ()
+    * import com.lumidion.sonatype.central.client.core.{
+    *   DeploymentName,
+    *   PublishingType,
+    *   SonatypeCredentials
+    * }
+    * import java.io.File
+    * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
+    *
+    * val backend             = HttpURLConnectionBackend()
+    * val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    * val client              = new SyncSonatypeClient(sonatypeCredentials, backend)
+    * val zippedBundle        = new File("com-testing-project-1.0.0.zip")
+    *
+    * for {
+    *   id <- client
+    *     .uploadBundle(
+    *       zippedBundle,
+    *       DeploymentName("com.testing.project-1.0.0"),
+    *       Some(PublishingType.USER_MANAGED)
+    *     ).body
+    *   _ = client.publishValidatedDeployment(id)
+    * } yield ()
     *   }}}
     * @return
     *   `Response[Unit]`
