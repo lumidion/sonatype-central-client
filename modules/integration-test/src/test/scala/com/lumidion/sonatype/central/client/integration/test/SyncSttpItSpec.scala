@@ -4,6 +4,7 @@ import com.lumidion.sonatype.central.client.core.{
   CheckStatusResponse,
   DeploymentName,
   DeploymentState,
+  IsArtifactPublishedResponse,
   PublishingType
 }
 import com.lumidion.sonatype.central.client.core.DeploymentState.VALIDATED
@@ -103,5 +104,12 @@ class SyncSttpItSpec extends AnyFreeSpec with Matchers {
     } yield ()
 
     op.isRight shouldBe true
+  }
+
+  testAgainstEndpoints("#isArtifactPublished", false) { client =>
+    client.isArtifactPublished("org.mockito", "mockito-scala-cats_2.13", "1.17.37")(
+      asJson[IsArtifactPublishedResponse]
+    )
+//    client.isArtifactPublished("com.lumidion", "sonatype-central-client-core_3", "0.3.0")
   }
 }

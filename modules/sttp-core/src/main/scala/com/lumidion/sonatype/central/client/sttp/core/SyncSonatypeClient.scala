@@ -4,6 +4,7 @@ import com.lumidion.sonatype.central.client.core.{
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
+  IsArtifactPublishedResponse,
   PublishingType,
   SonatypeCredentials
 }
@@ -64,7 +65,7 @@ class SyncSonatypeClient(
       localBundlePath: File,
       deploymentName: DeploymentName,
       publishingType: Option[PublishingType]
-  ): Response[Either[ResponseException[String, Exception], DeploymentId]] = {
+  ): Response[Either[ResponseException[String], DeploymentId]] = {
     val request = baseClient.uploadBundleRequest(localBundlePath, deploymentName, publishingType)
     request.send(backend)
   }
@@ -116,8 +117,8 @@ class SyncSonatypeClient(
       deploymentId: DeploymentId,
       timeout: Long = 5000
   )(
-      jsonDecoder: => ResponseAs[Either[ResponseException[String, E], CheckStatusResponse]]
-  ): Response[Either[ResponseException[String, E], CheckStatusResponse]] = {
+      jsonDecoder: => ResponseAs[Either[ResponseException[String], CheckStatusResponse]]
+  ): Response[Either[ResponseException[String], CheckStatusResponse]] = {
     val request = baseClient.checkStatusRequest(deploymentId, timeout)(jsonDecoder)
     request.send(backend)
   }
@@ -158,6 +159,19 @@ class SyncSonatypeClient(
   def deleteDeployment(deploymentId: DeploymentId): Response[Unit] = {
     val request = baseClient.deleteDeploymentRequest(deploymentId)
     request.send(backend)
+  }
+
+  def isArtifactPublished[E](
+      namespace: String,
+      name: String,
+      version: String
+  )(
+      jsonDecoder: => ResponseAs[Either[ResponseException[String], IsArtifactPublishedResponse]]
+  ): Response[Either[ResponseException[String], Boolean]] = {
+    val request  = baseClient.isArtifactPublishedRequest(namespace, name, version)(jsonDecoder)
+    val response = request.send(backend)
+    println(response)
+    response
   }
 
   /** Publishes a deployment that is currently in the "validated" state.

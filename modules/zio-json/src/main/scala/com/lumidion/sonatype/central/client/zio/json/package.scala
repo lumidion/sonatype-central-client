@@ -4,7 +4,8 @@ import com.lumidion.sonatype.central.client.core.{
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
-  DeploymentState
+  DeploymentState,
+  IsArtifactPublishedResponse
 }
 
 import scala.language.higherKinds
@@ -20,5 +21,7 @@ package object json {
       JsonDecoder.string.mapOrFail(DeploymentState.decoder)
     implicit val checkStatusResponseBodyDecoder: JsonDecoder[CheckStatusResponse] =
       DeriveJsonDecoder.gen[CheckStatusResponse]
+    implicit val isArtifactPublishedResponse: JsonDecoder[IsArtifactPublishedResponse] =
+      DeriveJsonDecoder.gen[IsArtifactPublishedResponse]
   }
 }

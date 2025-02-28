@@ -4,7 +4,8 @@ import com.lumidion.sonatype.central.client.core.{
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
-  DeploymentState
+  DeploymentState,
+  IsArtifactPublishedResponse
 }
 
 import upickle.default._
@@ -23,4 +24,7 @@ package object decoders {
     }
   implicit val checkStatusResponseBodyDecoder: Reader[CheckStatusResponse] =
     macroR[CheckStatusResponse]
+
+  implicit val isArtifactPublishedResponseBodyDecoder: Reader[IsArtifactPublishedResponse] =
+    macroR[IsArtifactPublishedResponse]
 }

@@ -5,6 +5,7 @@ import com.lumidion.sonatype.central.client.core.{
   DeploymentId,
   DeploymentName,
   GenericSonatypeClient,
+  IsArtifactPublishedResponse,
   PublishingType,
   SonatypeCredentials
 }
@@ -30,9 +31,16 @@ class BaseSonatypeClient(
     loggingOptions: Option[LoggingOptions] = None,
     overrideEndpoint: Option[String] = None
 ) extends GenericSonatypeClient(overrideEndpoint) {
-  private val finalLoggingOptions = loggingOptions.getOrElse(LoggingOptions(None, None, None, None))
+  private val finalLoggingOptions = loggingOptions.getOrElse(
+    LoggingOptions(
+      logRequestBody = None,
+      logResponseBody = None,
+      logRequestHeaders = None,
+      logResponseHeaders = None
+    )
+  )
   private val baseRequest = quickRequest
-    .logSettings(
+    .loggingOptions(
       logRequestBody = finalLoggingOptions.logRequestBody,
       logResponseBody = finalLoggingOptions.logResponseBody,
       logRequestHeaders = finalLoggingOptions.logRequestHeaders,
@@ -44,7 +52,7 @@ class BaseSonatypeClient(
       localBundlePath: File,
       deploymentName: DeploymentName,
       publishingType: Option[PublishingType]
-  ): Request[Either[ResponseException[String, Exception], DeploymentId]] = {
+  ): Request[Either[ResponseException[String], DeploymentId]] = {
     val endpoint = uri"$clientUploadBundleUrl"
       .addParam(
         UploadBundleRequestParams.BUNDLE_PUBLISHING_TYPE.unapply,
@@ -71,8 +79,8 @@ class BaseSonatypeClient(
       deploymentId: DeploymentId,
       timeout: Long
   )(
-      jsonDecoder: ResponseAs[Either[ResponseException[String, E], CheckStatusResponse]]
-  ): Request[Either[ResponseException[String, E], CheckStatusResponse]] = {
+      jsonDecoder: ResponseAs[Either[ResponseException[String], CheckStatusResponse]]
+  ): Request[Either[ResponseException[String], CheckStatusResponse]] = {
     val endpoint = uri"$clientCheckStatusUrl".addParam(
       CheckStatusRequestParams.DEPLOYMENT_ID.unapply,
       deploymentId.unapply
@@ -98,5 +106,24 @@ class BaseSonatypeClient(
     baseRequest
       .post(endpoint)
       .mapResponse(_ => ())
+  }
+
+  def isArtifactPublishedRequest(
+      namespace: String,
+      name: String,
+      version: String
+  )(
+      jsonDecoder: => ResponseAs[Either[ResponseException[String], IsArtifactPublishedResponse]]
+  ): Request[Either[ResponseException[String], Boolean]] = {
+    val endpoint = uri"$clientIsArtifactPublishedUrl"
+      .addParam("namespace", namespace)
+      .addParam("name", name)
+      .addParam("version", version)
+    baseRequest
+      .get(endpoint)
+      .response(jsonDecoder)
+      .mapResponseRight[ResponseException[String], IsArtifactPublishedResponse, Boolean](
+        _.published
+      )
   }
 }
