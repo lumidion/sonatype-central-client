@@ -80,9 +80,9 @@ class GigahorseItSpec extends AnyFreeSpec with Matchers {
       )
       res <- client.checkStatus(id)
       _ = res.isDefined shouldBe true
-      deploymentDeletionRes <- client.deleteDeployment(id)
+      deploymentDeletionRes <- client.deleteDeployment(id, 10000)
       _ = deploymentDeletionRes.isDefined shouldBe true
-      notFoundDeploymentDeletionRes <- client.deleteDeployment(id)
+      notFoundDeploymentDeletionRes <- client.deleteDeployment(id, 10000)
       _ = notFoundDeploymentDeletionRes.isEmpty shouldBe true
     } yield ()
 

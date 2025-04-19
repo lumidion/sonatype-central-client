@@ -67,7 +67,9 @@ class SyncSonatypeClient(
     var shouldRetry = false
 
     val res = backendClient.processFull(request).flatMap { response =>
-      val is5xx = response.status >= 500
+      val statusInitialChar = response.status.toString.charAt(0)
+      val is5xx             = statusInitialChar == '5'
+      val is2xx             = statusInitialChar == '2'
       if (is5xx && totalAwaitTime <= awaitTimeout) {
         Thread.sleep(timeoutInterval)
         shouldRetry = true
@@ -105,7 +107,7 @@ class SyncSonatypeClient(
             )
           )
         )
-      } else if (!(response.status % 2 == 0)) {
+      } else if (!(is2xx)) {
         Future.successful(
           Left(
             GenericError(
