@@ -80,7 +80,7 @@ class RequestsItSpec extends AnyFreeSpec with Matchers {
   testAgainstEndpoints("#publishValidatedDeployment") { client =>
     val id = client.uploadBundleFromFile(
       zippedBundle,
-      DeploymentName("requests-to-publish-"),
+      DeploymentName("requests-to-publish"),
       Some(PublishingType.USER_MANAGED)
     )
     val res = client.checkStatus(id)
