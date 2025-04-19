@@ -4,8 +4,7 @@ import com.lumidion.sonatype.central.client.core.{
   DeploymentId,
   DeploymentName,
   DeploymentState,
-  PublishingType,
-  SonatypeCredentials
+  PublishingType
 }
 import com.lumidion.sonatype.central.client.gigahorse.SyncSonatypeClient
 import com.lumidion.sonatype.central.client.integration.test.Utils.{
