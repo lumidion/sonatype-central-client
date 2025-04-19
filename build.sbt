@@ -41,7 +41,6 @@ inThisBuild(
     versionScheme          := Some("semver-spec"),
     sonatypeCredentialHost := sonatypeCentralHost,
     githubWorkflowJavaVersions := Seq(
-      JavaSpec.temurin("8"),
       JavaSpec.temurin("11")
     ),
     githubWorkflowScalaVersions := crossScalaVersionsGlobal,
