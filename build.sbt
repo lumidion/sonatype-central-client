@@ -132,6 +132,17 @@ lazy val core = (project in file("modules/core"))
   .settings(mimaSettings)
   .settings(commonSettings)
 
+lazy val gigahorse = (project in file("modules/gigahorse"))
+  .settings(
+    name := s"${globals.projectName}-gigahorse",
+    libraryDependencies ++= Seq(
+      "com.eed3si9n" %% "gigahorse-okhttp" % versions.gigahorse
+    )
+  )
+  .settings(mimaSettings)
+  .settings(commonSettings)
+  .dependsOn(core, upickle)
+
 lazy val requests = (project in file("modules/requests"))
   .settings(
     name := s"${globals.projectName}-requests",
@@ -186,7 +197,7 @@ lazy val integration_test = (project in file("modules/integration-test"))
     )
   )
   .settings(commonSettings)
-  .dependsOn(requests, sttp_core, zio_json)
+  .dependsOn(gigahorse, requests, sttp_core, zio_json)
 
 lazy val mock_server = (project in file("modules/mock-server"))
   .settings(
@@ -213,4 +224,4 @@ lazy val root = (project in file("."))
     publish / skip := true,
     name           := globals.projectName
   )
-  .aggregate(core, requests, upickle, sttp_core, zio_json, integration_test)
+  .aggregate(core, gigahorse, requests, upickle, sttp_core, zio_json, integration_test)

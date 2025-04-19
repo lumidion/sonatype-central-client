@@ -6,11 +6,11 @@
 
 #### Dependencies
 
-For a quick start with sttp and zio json, add the following to your library dependencies in `build.sbt`:
+For a quick start with a sttp client featuring zio-json support, add the following to your library dependencies in `build.sbt`:
 
 ```sbt
-  "com.lumidion"  %%  "sonatype-central-client-sttp-core"  %  "0.3.0"
-  "com.lumidion"  %%  "sonatype-central-client-zio-json"   %  "0.3.0"
+  "com.lumidion"  %%  "sonatype-central-client-sttp-core"  %  "0.5.0"
+  "com.lumidion"  %%  "sonatype-central-client-zio-json"   %  "0.5.0"
   "com.softwaremill.sttp.client4" %% "zio-json"            %  "4.0.0-M16"
 ```
 
@@ -56,10 +56,10 @@ object Main {
 
 #### Dependencies
 
-For a quick start with requests, add the following to your library dependencies in `build.sbt`:
+For a quick start with the requests client, add the following to your library dependencies in `build.sbt`:
 
 ```sbt
-  "com.lumidion"  %%  "sonatype-central-client-requests"  %  "0.3.0"
+  "com.lumidion"  %%  "sonatype-central-client-requests"  %  "0.5.0"
 ```
 
 #### Simple App
@@ -94,4 +94,52 @@ object Main {
   }
 }
 ```
+
+### Sample Application (Gigahorse Sync Client)
+
+#### Dependencies
+
+For a quick start with the gigahorse client, add the following to your library dependencies in `build.sbt`:
+
+```sbt
+  "com.lumidion"  %%  "sonatype-central-client-gigahorse"  %  "0.5.0"
+```
+
+#### Simple App
+
+```scala
+import com.lumidion.sonatype.central.client.core.{
+  DeploymentName,
+  PublishingType,
+  SonatypeCredentials
+}
+
+import gigahorse.support.okhttp.Gigahorse
+import java.io.File
+import scala.concurrent.ExecutionContext.Implicits._
+
+object Main {
+  def main(args: Array[String]): Unit = {
+    val httpClient = Gigahorse.http(Gigahorse.config)
+    val credentials = SonatypeCredentials("admin", "admin")
+    val sonatypeClient = new SyncSonatypeClient(credentials, httpClient)
+    for {
+      id <- sonatypeClient.uploadBundle(
+        new File("mybundle.zip"),
+        DeploymentName("com.testing.project-1.0.0"),
+        Some(PublishingType.AUTOMATIC)
+      )
+      status <- sonatypeClient.checkStatus(id)
+      _ <- sonatypeClient.deleteDeployment(id)
+      secondId <- sonatypeClient.uploadBundle(
+        new File("mysecondbundle.zip"),
+        DeploymentName("com.testing2.project-1.0.0"),
+        Some(PublishingType.AUTOMATIC)
+      )
+      _ <- sonatypeClient.publishValidatedDeployment(secondId)
+    } yield ()
+  }
+}
+```
+
 
