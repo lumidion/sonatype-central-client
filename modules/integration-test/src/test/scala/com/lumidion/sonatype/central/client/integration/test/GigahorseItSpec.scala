@@ -4,7 +4,8 @@ import com.lumidion.sonatype.central.client.core.{
   DeploymentId,
   DeploymentName,
   DeploymentState,
-  PublishingType
+  PublishingType,
+  SonatypeCredentials
 }
 import com.lumidion.sonatype.central.client.gigahorse.SyncSonatypeClient
 import com.lumidion.sonatype.central.client.integration.test.Utils.{
@@ -50,7 +51,7 @@ class GigahorseItSpec extends AnyFreeSpec with Matchers {
   }
 
   testAgainstEndpoints("#uploadBundle") { client =>
-    for {
+    val res = for {
       id <- client.uploadBundle(
         zippedBundle,
         DeploymentName("gigahorse"),
@@ -64,13 +65,18 @@ class GigahorseItSpec extends AnyFreeSpec with Matchers {
 
       isResValid shouldBe true
     }
+
+    if (res.isLeft) {
+      println(res)
+    }
+    res.isRight shouldBe true
   }
 
   testAgainstEndpoints("#deleteDeployment") { client =>
-    for {
+    val res = for {
       id <- client.uploadBundle(
         zippedBundle,
-        DeploymentName("requests-pending-deletion"),
+        DeploymentName("gigahorse-pending-deletion"),
         Some(PublishingType.USER_MANAGED)
       )
       res <- client.checkStatus(id)
@@ -80,13 +86,18 @@ class GigahorseItSpec extends AnyFreeSpec with Matchers {
       notFoundDeploymentDeletionRes <- client.deleteDeployment(id)
       _ = notFoundDeploymentDeletionRes.isEmpty shouldBe true
     } yield ()
+
+    if (res.isLeft) {
+      println(res)
+    }
+    res.isRight shouldBe true
   }
 
   testAgainstEndpoints("#publishValidatedDeployment") { client =>
-    for {
+    val res = for {
       id <- client.uploadBundle(
         zippedBundle,
-        DeploymentName("requests-pending-deletion"),
+        DeploymentName("gigahorse-pending-publish"),
         Some(PublishingType.USER_MANAGED)
       )
       res <- client.checkStatus(id)
@@ -98,5 +109,10 @@ class GigahorseItSpec extends AnyFreeSpec with Matchers {
       )
       _ = notFoundPublishDeploymentRes.isEmpty shouldBe true
     } yield ()
+
+    if (res.isLeft) {
+      println(res)
+    }
+    res.isRight shouldBe true
   }
 }

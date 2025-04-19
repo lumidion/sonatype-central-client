@@ -61,7 +61,7 @@ class SyncSttpItSpec extends AnyFreeSpec with Matchers {
         deploymentState == DeploymentState.FAILED || deploymentState == DeploymentState.VALIDATING || deploymentState == DeploymentState.PENDING || deploymentState == VALIDATED
     } yield isStateValid shouldBe true
 
-    res.isLeft shouldBe false
+    res.isRight shouldBe true
   }
 
   testAgainstEndpoints("#deleteDeployment") { client =>

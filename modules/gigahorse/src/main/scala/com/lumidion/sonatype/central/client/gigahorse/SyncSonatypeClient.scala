@@ -21,7 +21,15 @@ import com.lumidion.sonatype.central.client.core.SonatypeCentralError.{
 }
 import com.lumidion.sonatype.central.client.upickle.decoders._
 
-import gigahorse.{FileBody, FormPart, FullResponse, HttpClient, MultipartFormBody, Request}
+import gigahorse.{
+  FileBody,
+  FormPart,
+  FullResponse,
+  HttpClient,
+  HttpVerbs,
+  MultipartFormBody,
+  Request
+}
 import gigahorse.support.okhttp.Gigahorse
 import java.io.File
 import scala.annotation.tailrec
@@ -59,7 +67,7 @@ class SyncSonatypeClient(
     var shouldRetry = false
 
     val res = backendClient.processFull(request).flatMap { response =>
-      val is5xx = response.status % 5 == 0
+      val is5xx = response.status >= 500
       if (is5xx && totalAwaitTime <= awaitTimeout) {
         Thread.sleep(timeoutInterval)
         shouldRetry = true
@@ -143,7 +151,9 @@ class SyncSonatypeClient(
       .withRequestTimeout(requestTimeoutMs.milliseconds)
       .post(MultipartFormBody(FormPart(uploadBundleMultipartFileName, FileBody(localBundlePath))))
 
-    val res = withRetry(request, timeoutMs).map(eitherRes => {
+    // Retry timeout needs to be less than the future timeout (below), otherwise the future may time out before the retry, causing an error to be thrown.
+    // All errors should be captured as Lefts.
+    val res = withRetry(request, timeoutMs - 50).map(eitherRes => {
       eitherRes.map(res => DeploymentId(res.bodyAsString))
     })
 
@@ -165,9 +175,9 @@ class SyncSonatypeClient(
       .withHeaders(authHeader)
       .withContentType("text/plain")
       .withRequestTimeout(timeoutMs.milliseconds)
-      .withMethod("post")
+      .withMethod(HttpVerbs.POST)
 
-    val help = withRetry(request, timeoutMs).map(eitherRes => {
+    val res = withRetry(request, timeoutMs - 50).map(eitherRes => {
       for {
         fullRes <- eitherRes
         finalRes <- {
@@ -185,7 +195,7 @@ class SyncSonatypeClient(
       } yield finalRes
     })
 
-    Await.result(help, timeoutMs.milliseconds)
+    Await.result(res, timeoutMs.milliseconds)
   }
 
   def deleteDeployment(
@@ -200,7 +210,7 @@ class SyncSonatypeClient(
       .withContentType("text/plain")
       .delete
 
-    val res = withRetry(request, timeoutMs).map { eitherRes =>
+    val res = withRetry(request, timeoutMs - 50).map { eitherRes =>
       for {
         fullRes <- eitherRes
         finalRes <- {
@@ -226,9 +236,9 @@ class SyncSonatypeClient(
       .url(finalEndpoint)
       .withHeaders(authHeader)
       .withContentType("text/plain")
-      .withMethod("post")
+      .withMethod(HttpVerbs.POST)
 
-    val res = withRetry(request, timeoutMs).map { eitherRes =>
+    val res = withRetry(request, timeoutMs - 50).map { eitherRes =>
       for {
         fullRes <- eitherRes
         finalRes <- {
