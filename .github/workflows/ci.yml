@@ -24,7 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         scala: [2.12.20, 2.13.16, 3.3.5]
-        java: [temurin@11]
+        java: [temurin@11, zulu@8]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -40,6 +40,14 @@ jobs:
           java-version: 11
           cache: sbt
 
+      - name: Setup Java (zulu@8)
+        if: matrix.java == 'zulu@8'
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 8
+          cache: sbt
+
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
@@ -53,7 +61,12 @@ jobs:
         run: ./start-mock-server.sh
 
       - name: Run Integration Tests
+        if: matrix.java == 'temurin@11'
         run: sbt '++ ${{ matrix.scala }}' it
+
+      - name: Run Integration Tests (JDK 8)
+        if: matrix.java == 'zulu@8'
+        run: sbt '++ ${{ matrix.scala }}' gigahorseTest
 
   publish:
     name: Publish Artifacts
@@ -77,6 +90,14 @@ jobs:
         with:
           distribution: temurin
           java-version: 11
+          cache: sbt
+
+      - name: Setup Java (zulu@8)
+        if: matrix.java == 'zulu@8'
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 8
           cache: sbt
 
       - name: Setup sbt

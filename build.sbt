@@ -10,6 +10,7 @@ import Dependencies.versions
 
 addCommandAlias("fmt", "scalafmtAll; scalafmtSbt; mock_server/scalafmtAll")
 addCommandAlias("it", "integration_test/test")
+addCommandAlias("gigahorseTest", "integration_test/testOnly *.GigahorseItSpec")
 addCommandAlias("compileAll", "+compile; integration_test/test:compile; mock_server/compile")
 addCommandAlias(
   "mimaChecks",
@@ -41,7 +42,8 @@ inThisBuild(
     versionScheme          := Some("semver-spec"),
     sonatypeCredentialHost := sonatypeCentralHost,
     githubWorkflowJavaVersions := Seq(
-      JavaSpec.temurin("11")
+      JavaSpec.temurin("11"),
+      JavaSpec.zulu("8"),
     ),
     githubWorkflowScalaVersions := crossScalaVersionsGlobal,
     githubWorkflowAddedJobs ++= Seq(
@@ -88,7 +90,12 @@ inThisBuild(
           commands = List("clean", "compile", "integration_test/test:compile")
         ),
       WorkflowStep.Run(name = Some("Start Mock Server"), commands = List("./start-mock-server.sh")),
-      WorkflowStep.Sbt(name = Some("Run Integration Tests"), commands = List("it"))
+      WorkflowStep.Sbt(name = Some("Run Integration Tests"), commands = List("it")).copy(
+        cond = Some("matrix.java == 'temurin@11'")
+      ),
+      WorkflowStep.Sbt(name = Some("Run Integration Tests (JDK 8)"), commands = List("gigahorseTest")).copy(
+        cond = Some("matrix.java == 'zulu@8'")
+      ),
     ),
     githubWorkflowTargetBranches := Seq("main"),
     githubWorkflowPublish := Seq(
@@ -126,22 +133,24 @@ val commonSettings = Seq(
 )
 
 lazy val core = (project in file("modules/core"))
-  .settings(
-    name := s"${globals.projectName}-core"
-  )
   .settings(mimaSettings)
   .settings(commonSettings)
+  .settings(
+    name := s"${globals.projectName}-core",
+    Compile / scalacOptions += "-release:8",
+  )
 
 lazy val gigahorse = (project in file("modules/gigahorse"))
+  .dependsOn(core, upickle)
+  .settings(mimaSettings)
+  .settings(commonSettings)
   .settings(
     name := s"${globals.projectName}-gigahorse",
     libraryDependencies ++= Seq(
       "com.eed3si9n" %% "gigahorse-okhttp" % versions.gigahorse
-    )
+    ),
+    Compile / scalacOptions += "-release:8",
   )
-  .settings(mimaSettings)
-  .settings(commonSettings)
-  .dependsOn(core, upickle)
 
 lazy val requests = (project in file("modules/requests"))
   .settings(
