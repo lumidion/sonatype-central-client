@@ -13,7 +13,7 @@ import com.lumidion.sonatype.central.client.integration.test.Utils.{
   zippedBundle
 }
 
-import gigahorse.support.okhttp.Gigahorse
+import gigahorse.support.apachehttp.Gigahorse
 import java.util.UUID
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
