@@ -30,7 +30,7 @@ import gigahorse.{
   MultipartFormBody,
   Request
 }
-import gigahorse.support.okhttp.Gigahorse
+import gigahorse.support.apachehttp.Gigahorse
 import java.io.File
 import scala.annotation.tailrec
 import scala.concurrent.{Await, ExecutionContext, Future}
