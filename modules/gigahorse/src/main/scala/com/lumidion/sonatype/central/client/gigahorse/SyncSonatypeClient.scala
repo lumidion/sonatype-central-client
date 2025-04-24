@@ -40,7 +40,7 @@ import upickle.default._
 class SyncSonatypeClient(
     credentials: SonatypeCredentials,
     backendClient: HttpClient,
-    requestTimeoutMs: Int = 5000,
+    requestTimeoutMs: Int = 600 * 1000,
     overrideEndpoint: Option[String] = None
 )(implicit ec: ExecutionContext)
     extends GenericSonatypeClient(overrideEndpoint) {
@@ -53,7 +53,7 @@ class SyncSonatypeClient(
       .mkString("&")
   }
 
-  private val defaultAwaitTimeout = 120 * 1000
+  private val defaultAwaitTimeout = requestTimeoutMs + 50
 
   private val authHeader: (String, String) = ("Authorization", credentials.toAuthToken)
 
@@ -150,7 +150,7 @@ class SyncSonatypeClient(
     val request = Gigahorse
       .url(finalEndpoint)
       .withHeaders(authHeader)
-      .withRequestTimeout(requestTimeoutMs.milliseconds)
+      .withRequestTimeout((timeoutMs - 50).milliseconds)
       .post(MultipartFormBody(FormPart(uploadBundleMultipartFileName, FileBody(localBundlePath))))
 
     // Retry timeout needs to be less than the future timeout (below), otherwise the future may time out before the retry, causing an error to be thrown.
@@ -164,7 +164,7 @@ class SyncSonatypeClient(
 
   def checkStatus(
       deploymentId: DeploymentId,
-      timeoutMs: Int = 5000
+      timeoutMs: Int = 60000
   ): Either[SonatypeCentralError, Option[CheckStatusResponse]] = {
     val deploymentIdParams = Map(
       (CheckStatusRequestParams.DEPLOYMENT_ID.unapply -> deploymentId.unapply)
@@ -202,7 +202,7 @@ class SyncSonatypeClient(
 
   def deleteDeployment(
       deploymentId: DeploymentId,
-      timeoutMs: Int = 5000
+      timeoutMs: Int = 60000
   ): Either[SonatypeCentralError, Option[Unit]] = {
 
     val finalEndpoint = clientDeleteDeploymentUrl(deploymentId)
@@ -230,7 +230,7 @@ class SyncSonatypeClient(
 
   def publishValidatedDeployment(
       deploymentId: DeploymentId,
-      timeoutMs: Int = 5000
+      timeoutMs: Int = 60000
   ): Either[SonatypeCentralError, Option[Unit]] = {
 
     val finalEndpoint = clientPublishValidatedDeploymentUrl(deploymentId)

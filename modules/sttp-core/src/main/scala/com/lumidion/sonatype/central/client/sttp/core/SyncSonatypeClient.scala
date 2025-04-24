@@ -114,7 +114,7 @@ class SyncSonatypeClient(
     */
   def checkStatus[E](
       deploymentId: DeploymentId,
-      timeout: Long = 5000
+      timeout: Long = 60000
   )(
       jsonDecoder: => ResponseAs[Either[ResponseException[String, E], CheckStatusResponse]]
   ): Response[Either[ResponseException[String, E], CheckStatusResponse]] = {
