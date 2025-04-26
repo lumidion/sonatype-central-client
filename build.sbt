@@ -147,7 +147,7 @@ lazy val gigahorse = (project in file("modules/gigahorse"))
   .settings(
     name := s"${globals.projectName}-gigahorse",
     libraryDependencies ++= Seq(
-      "com.eed3si9n" %% "gigahorse-okhttp" % versions.gigahorse
+      "com.eed3si9n" %% "gigahorse-apache-http" % versions.gigahorse
     ),
     Compile / scalacOptions += "-release:8",
   )
