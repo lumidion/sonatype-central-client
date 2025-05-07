@@ -4,7 +4,8 @@ import com.lumidion.sonatype.central.client.core.{
   DeploymentId,
   DeploymentName,
   DeploymentState,
-  PublishingType
+  PublishingType,
+  SonatypeCentralComponent
 }
 import com.lumidion.sonatype.central.client.integration.test.Utils.{
   liveSonatypeCredentials,
@@ -95,5 +96,35 @@ class RequestsItSpec extends AnyFreeSpec with Matchers {
       client.publishValidatedDeployment(DeploymentId(UUID.randomUUID().toString))
 
     notFoundPublishDeploymentRes.isEmpty shouldBe true
+  }
+
+  testAgainstEndpoints("#checkPublishedStatus") { client =>
+    // Check a validated deployment
+    val validatedDeploymentName = DeploymentName("com.testing.validated-1.0.0")
+    val id = client.uploadBundleFromFile(
+      zippedBundle,
+      validatedDeploymentName,
+      Some(PublishingType.USER_MANAGED)
+    )
+    val res = client.checkStatus(id)
+
+    res.isDefined shouldBe true
+    res.get.deploymentState shouldBe DeploymentState.VALIDATED
+
+    client
+      .checkPublishedStatus(
+        SonatypeCentralComponent("com.testing", "validated", "1.0.0")
+      )
+      .map(_.published) shouldBe Some(false)
+
+    // Check the pre-published deployment
+    client
+      .checkPublishedStatus(SonatypeCentralComponent("com.testing", "project", "1.0.0"))
+      .map(_.published) shouldBe Some(true)
+
+    // Check non-existent published deployment
+    client
+      .checkPublishedStatus(SonatypeCentralComponent("com.example", "temp", "1.0.0"))
+      .map(_.published) shouldBe Some(false)
   }
 }

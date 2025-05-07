@@ -1,14 +1,17 @@
 package com.lumidion.sonatype.central.client.requests
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
   GenericSonatypeClient,
   PublishingType,
+  SonatypeCentralComponent,
   SonatypeCredentials
 }
 import com.lumidion.sonatype.central.client.core.RequestParams.{
+  CheckPublishedRequestParams,
   CheckStatusRequestParams,
   UploadBundleRequestParams
 }
@@ -399,6 +402,61 @@ class SyncSonatypeClient(
       None
     } else {
       Some(())
+    }
+  }
+
+  /** Checks whether a component is published in Sonatype Central.
+    *
+    * @param component
+    *   The SonatypeCentralComponent containing groupId, artifactId, and version.
+    * @param timeout
+    *   The maximum amount of time (in ms) to retry the call if it receives an internal server
+    *   error.
+    * @example
+    *   {{{
+    *   import com.lumidion.sonatype.central.client.core.{
+    *       CheckPublishedStatusResponse,
+    *       SonatypeCentralComponent,
+    *       SonatypeCredentials
+    *     }
+    *   import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
+    *
+    *   val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    *   val client              = new SyncSonatypeClient(sonatypeCredentials)
+    *
+    *   val component = SonatypeCentralComponent("com.example", "artifact", "1.0.0")
+    *   val response = client.checkPublishedStatus(component)
+    *
+    *   response match {
+    *     case Some(status) => println(s"Published: ${status.published}")
+    *     case None         => println("Component not found")
+    *   }
+    *   }}}
+    * @return
+    *   `Some(CheckPublishedStatusResponse)` if the component exists, `None` if it doesn't exist.
+    */
+  def checkPublishedStatus(
+      component: SonatypeCentralComponent,
+      timeout: Int = 5000
+  ): Option[CheckPublishedStatusResponse] = {
+
+    val params = Map(
+      CheckPublishedRequestParams.NAMESPACE.unapply -> component.groupId,
+      CheckPublishedRequestParams.NAME.unapply      -> component.artifactId,
+      CheckPublishedRequestParams.VERSION.unapply   -> component.version
+    )
+
+    val finalParams   = paramsToString(params)
+    val finalEndpoint = s"$clientCheckPublishedUrl?$finalParams"
+    val response = withRetry(
+      session.get(finalEndpoint),
+      awaitTimeout = timeout
+    )
+
+    if (response.statusCode == 404) {
+      None
+    } else {
+      Some(read[CheckPublishedStatusResponse](response.text()))
     }
   }
 }

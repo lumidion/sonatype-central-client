@@ -2,6 +2,7 @@ package com.lumidion.sonatype.central.mockserver
 
 import com.lumidion.sonatype.central.client.core.{
   CheckStatusResponse,
+  CheckPublishedStatusResponse,
   DeploymentId,
   DeploymentName,
   DeploymentState
@@ -30,5 +31,7 @@ object Utils {
       JsonEncoder.string.contramap[DeploymentState](_.unapply)
     implicit val checkStatusResponseBodyDecoder: JsonEncoder[CheckStatusResponse] =
       DeriveJsonEncoder.gen[CheckStatusResponse]
+    implicit val checkPublishedStatusResponseBodyDecoder: JsonEncoder[CheckPublishedStatusResponse] =
+      DeriveJsonEncoder.gen[CheckPublishedStatusResponse]
   }
 }
