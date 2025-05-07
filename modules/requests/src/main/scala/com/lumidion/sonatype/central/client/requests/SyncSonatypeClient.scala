@@ -1,6 +1,7 @@
 package com.lumidion.sonatype.central.client.requests
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
@@ -9,6 +10,7 @@ import com.lumidion.sonatype.central.client.core.{
   SonatypeCredentials
 }
 import com.lumidion.sonatype.central.client.core.RequestParams.{
+  CheckPublishedRequestParams,
   CheckStatusRequestParams,
   UploadBundleRequestParams
 }
@@ -400,5 +402,75 @@ class SyncSonatypeClient(
     } else {
       Some(())
     }
+  }
+
+  /** Checks whether a component is published in Sonatype Central.
+    *
+    * @param deploymentName
+    *   The deployment name in the format `namespace.name-version` (e.g.,
+    *   `com.example.artifact-1.0.0`).
+    * @param timeout
+    *   The maximum amount of time (in ms) to retry the call if it receives an internal server
+    *   error.
+    * @example
+    *   {{{
+    *   import com.lumidion.sonatype.central.client.core.{
+    *       DeploymentName,
+    *       SonatypeCredentials
+    *     }
+    *   import com.lumidion.sonatype.central.client.requests.SyncSonatypeClient
+    *
+    *   val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    *   val client              = new SyncSonatypeClient(sonatypeCredentials)
+    *
+    *   val deploymentName = DeploymentName("com.example.artifact-1.0.0")
+    *   val response = client.checkPublishedStatus(deploymentName)
+    *
+    *   response match {
+    *     case Some(status) => println(s"Published: ${status.published}")
+    *     case None         => println("Deployment not found")
+    *   }
+    *   }}}
+    * @return
+    *   `Some(CheckPublishedStatusResponse)` if the deployment exists, `None` if it doesn't exist.
+    * @throws IllegalArgumentException
+    *   If the `deploymentName` is not in the expected format.
+    * @throws SonatypeCentralException
+    *   For non-404 errors (e.g., server errors, authorization errors).
+    */
+  def checkPublishedStatus(
+      deploymentName: DeploymentName,
+      timeout: Int = 5000
+  ): Option[CheckPublishedStatusResponse] = {
+
+    val pattern =
+      """^([a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)*)\.((?:[a-z0-9_-]+)(?:-(?!\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9.-]+)?(?:[+][a-zA-Z0-9-]+)?$)[a-z0-9_-]+)*)-(\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9.-]+)?(?:[+][a-zA-Z0-9-]+)?|-SNAPSHOT)$""".r
+    deploymentName.unapply match {
+      case pattern(namespace, name, version) =>
+        val params = Map(
+          CheckPublishedRequestParams.NAMESPACE.unapply -> namespace,
+          CheckPublishedRequestParams.NAME.unapply      -> name,
+          CheckPublishedRequestParams.VERSION.unapply   -> version
+        )
+
+        val finalParams   = paramsToString(params)
+        val finalEndpoint = s"$clientCheckPublishedUrl?$finalParams"
+        val response = withRetry(
+          session.get(finalEndpoint),
+          awaitTimeout = timeout
+        )
+
+        if (response.statusCode == 404) {
+          None
+        } else {
+          Some(read[CheckPublishedStatusResponse](response.text()))
+        }
+
+      case _ =>
+        throw new IllegalArgumentException(
+          s"Invalid DeploymentName format: ${deploymentName.unapply}. Expected format: namespace.name-version"
+        )
+    }
+
   }
 }
