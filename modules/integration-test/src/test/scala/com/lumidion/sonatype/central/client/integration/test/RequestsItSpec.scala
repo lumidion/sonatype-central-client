@@ -96,4 +96,32 @@ class RequestsItSpec extends AnyFreeSpec with Matchers {
 
     notFoundPublishDeploymentRes.isEmpty shouldBe true
   }
+
+  testAgainstEndpoints("#checkPublishedStatus") { client =>
+    // Check a validated deployment
+    val validatedDeploymentName = DeploymentName("com.testing.validated-1.0.0")
+    val id = client.uploadBundleFromFile(
+      zippedBundle,
+      validatedDeploymentName,
+      Some(PublishingType.USER_MANAGED)
+    )
+    val res = client.checkStatus(id)
+
+    res.isDefined shouldBe true
+    res.get.deploymentState shouldBe DeploymentState.VALIDATED
+
+    client
+      .checkPublishedStatus(validatedDeploymentName)
+      .map(_.published) shouldBe Some(false)
+
+    // Check the pre-published deployment
+    client
+      .checkPublishedStatus(DeploymentName("com.testing.project-1.0.0"))
+      .map(_.published) shouldBe Some(true)
+
+    // Check non-existent published deployment
+    client
+      .checkPublishedStatus(DeploymentName("com.example.temp-1.0.0"))
+      .map(_.published) shouldBe Some(false)
+  }
 }

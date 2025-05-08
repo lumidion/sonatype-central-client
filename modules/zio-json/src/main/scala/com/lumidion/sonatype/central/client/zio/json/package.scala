@@ -1,6 +1,7 @@
 package com.lumidion.sonatype.central.client.zio
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
@@ -20,5 +21,7 @@ package object json {
       JsonDecoder.string.mapOrFail(DeploymentState.decoder)
     implicit val checkStatusResponseBodyDecoder: JsonDecoder[CheckStatusResponse] =
       DeriveJsonDecoder.gen[CheckStatusResponse]
+    implicit val checkPublishedResponseBodyDecoder: JsonDecoder[CheckPublishedStatusResponse] =
+      DeriveJsonDecoder.gen[CheckPublishedStatusResponse]
   }
 }

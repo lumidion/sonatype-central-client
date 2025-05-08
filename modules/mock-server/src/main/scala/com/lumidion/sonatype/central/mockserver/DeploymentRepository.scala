@@ -14,6 +14,10 @@ class DeploymentRepository {
   private val mutableMap: MutableHashMap[UUID, (DeploymentName, DeploymentState)] =
     MutableHashMap.empty
 
+  // Store pre-published component
+  private val publishedComponents: scala.collection.mutable.Set[DeploymentName] =
+    scala.collection.mutable.HashSet(DeploymentName("com.testing.project-1.0.0"))
+
   def getDeployment(id: UUID): Option[(DeploymentName, DeploymentState)] = mutableMap.get(id)
 
   def createDeployment(
@@ -48,5 +52,9 @@ class DeploymentRepository {
           Left(InvalidPublishableDeployment)
         }
     } yield res
+  }
+
+  def isPublished(deploymentName: DeploymentName): Boolean = {
+    publishedComponents.contains(deploymentName)
   }
 }
