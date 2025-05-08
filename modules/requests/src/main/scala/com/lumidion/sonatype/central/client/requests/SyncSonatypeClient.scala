@@ -27,14 +27,14 @@ import upickle.default._
 
 class SyncSonatypeClient(
     credentials: SonatypeCredentials,
-    readTimeout: Int = 300 * 1000,
-    connectTimeout: Int = 5000,
+    readTimeout: Int = 600 * 1000,
+    connectTimeout: Int = 60 * 1000,
     overrideEndpoint: Option[String] = None
 ) extends GenericSonatypeClient(overrideEndpoint) {
 
   private val authHeader = Map("Authorization" -> credentials.toAuthToken)
 
-  private val defaultAwaitTimeout = 120 * 1000
+  private val defaultAwaitTimeout = readTimeout + 50
 
   private def paramsToString(params: Map[String, String]): String = {
     params.toVector
@@ -271,7 +271,7 @@ class SyncSonatypeClient(
     */
   def checkStatus(
       deploymentId: DeploymentId,
-      timeout: Int = 5000
+      timeout: Int = 60000
   ): Option[CheckStatusResponse] = {
     val deploymentIdParams = Map(
       (CheckStatusRequestParams.DEPLOYMENT_ID.unapply -> deploymentId.unapply)
@@ -328,7 +328,7 @@ class SyncSonatypeClient(
     */
   def deleteDeployment(
       deploymentId: DeploymentId,
-      timeout: Int = 5000
+      timeout: Int = 60000
   ): Option[Unit] = {
 
     val finalEndpoint = clientDeleteDeploymentUrl(deploymentId)
@@ -382,7 +382,7 @@ class SyncSonatypeClient(
     */
   def publishValidatedDeployment(
       deploymentId: DeploymentId,
-      timeout: Int = 5000
+      timeout: Int = 60000
   ): Option[Unit] = {
 
     val finalEndpoint = clientPublishValidatedDeploymentUrl(deploymentId)
