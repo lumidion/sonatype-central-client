@@ -1,6 +1,6 @@
 package com.lumidion.sonatype.central.mockserver.router
 
-import com.lumidion.sonatype.central.client.core.{CheckStatusResponse, DeploymentId, DeploymentName}
+import com.lumidion.sonatype.central.client.core.{CheckStatusResponse, CheckPublishedStatusResponse, DeploymentId, DeploymentName, SonatypeCentralComponent}
 import com.lumidion.sonatype.central.mockserver.router.Error.{
   DeploymentNotFound,
   InvalidPublishableDeployment
@@ -128,5 +128,46 @@ object Routes {
         case Left(DeploymentNotFound)           => Response.status(Status.NotFound)
       }
     }
+  }
+  
+  def getPublishedStatusRoute(
+    repository: DeploymentRepository
+): Handler[Any, Nothing, Request, Response] = {
+  handler { (req: Request) =>
+    {
+      for {
+        groupId <- req
+          .queryParam("namespace")
+          .toRight(
+            Response
+              .text("No `namespace` present in query params")
+              .status(Status.BadRequest)
+          )
+        artifactId <- req
+          .queryParam("name")
+          .toRight(
+            Response
+              .text("No `name` present in query params")
+              .status(Status.BadRequest)
+          )
+        version <- req
+          .queryParam("version")
+          .toRight(
+            Response
+              .text("No `version` present in query params")
+              .status(Status.BadRequest)
+          )
+        componentName = SonatypeCentralComponent(
+          groupId,
+          artifactId,
+          version
+        )
+        isPublished = repository.isPublished(componentName)
+        response = CheckPublishedStatusResponse(isPublished)
+      } yield Response.json(response.toJson).status(Status.Ok)
+    }.fold(
+      errorRes => errorRes,
+      successRes => successRes
+    )}
   }
 }

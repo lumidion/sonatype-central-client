@@ -5,7 +5,8 @@ import com.lumidion.sonatype.central.mockserver.router.Routes.{
   deleteDeployment,
   getDeploymentStatusRoute,
   publishValidatedDeployment,
-  uploadBundleRoute
+  uploadBundleRoute,
+  getPublishedStatusRoute
 }
 
 import zio._
@@ -23,7 +24,8 @@ object Main extends ZIOAppDefault {
       ) -> publishValidatedDeployment(repository),
       Method.DELETE / "api" / "v1" / "publisher" / "deployment" / uuid(
         "deploymentId"
-      ) -> deleteDeployment(repository)
+      ) -> deleteDeployment(repository),
+      Method.GET / "api" / "v1" / "publisher" / "published" -> getPublishedStatusRoute(repository)
     ) @@ authMiddleware
 
   def run: ZIO[Any, Throwable, Nothing] = Server.serve(routes).provide(Server.default)

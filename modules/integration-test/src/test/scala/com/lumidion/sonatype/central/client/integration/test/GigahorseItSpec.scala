@@ -4,7 +4,8 @@ import com.lumidion.sonatype.central.client.core.{
   DeploymentId,
   DeploymentName,
   DeploymentState,
-  PublishingType
+  PublishingType,
+  SonatypeCentralComponent
 }
 import com.lumidion.sonatype.central.client.gigahorse.SyncSonatypeClient
 import com.lumidion.sonatype.central.client.integration.test.Utils.{
@@ -113,5 +114,40 @@ class GigahorseItSpec extends AnyFreeSpec with Matchers {
       println(res)
     }
     res.isRight shouldBe true
+  }
+
+  testAgainstEndpoints("#checkPublishedStatus") { client =>
+    // Check a validated deployment
+    val validatedDeploymentName = DeploymentName("com.testing.validated-1.0.0")
+    val idEither = client.uploadBundle(
+      zippedBundle,
+      validatedDeploymentName,
+      Some(PublishingType.USER_MANAGED)
+    )
+    val validatedComponent = SonatypeCentralComponent("com.testing", "validated", "1.0.0")
+
+    val res =
+      for {
+        id        <- idEither
+        statusOpt <- client.checkStatus(id)
+        _ = statusOpt.isDefined shouldBe true
+        _ = statusOpt.get.deploymentState shouldBe DeploymentState.VALIDATED
+        publishedStatus <- client.checkPublishedStatus(validatedComponent)
+        _ = publishedStatus.map(_.published) shouldBe Some(false)
+        prePublishedStatus <- client.checkPublishedStatus(
+          SonatypeCentralComponent("com.testing", "project", "1.0.0")
+        )
+        _ = prePublishedStatus.map(_.published) shouldBe Some(true)
+        nonExistentStatus <- client.checkPublishedStatus(
+          SonatypeCentralComponent("com.example", "temp", "1.0.0")
+        )
+        _ = nonExistentStatus.map(_.published) shouldBe Some(false)
+      } yield ()
+
+    if (res.isLeft) {
+      println(res)
+    }
+    res.isRight shouldBe true
+
   }
 }

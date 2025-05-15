@@ -1,6 +1,6 @@
 package com.lumidion.sonatype.central.mockserver
 
-import com.lumidion.sonatype.central.client.core.{DeploymentName, DeploymentState}
+import com.lumidion.sonatype.central.client.core.{DeploymentName, DeploymentState, SonatypeCentralComponent}
 import com.lumidion.sonatype.central.mockserver.router.Error.{
   DeploymentNotFound,
   InvalidPublishableDeployment,
@@ -13,6 +13,10 @@ import scala.collection.mutable.{HashMap => MutableHashMap}
 class DeploymentRepository {
   private val mutableMap: MutableHashMap[UUID, (DeploymentName, DeploymentState)] =
     MutableHashMap.empty
+
+  // Store pre-published component
+  private val publishedComponents: scala.collection.mutable.Set[SonatypeCentralComponent] =
+    scala.collection.mutable.HashSet(SonatypeCentralComponent("com.testing", "project", "1.0.0"))
 
   def getDeployment(id: UUID): Option[(DeploymentName, DeploymentState)] = mutableMap.get(id)
 
@@ -48,5 +52,9 @@ class DeploymentRepository {
           Left(InvalidPublishableDeployment)
         }
     } yield res
+  }
+
+  def isPublished(componentName: SonatypeCentralComponent): Boolean = {
+    publishedComponents.contains(componentName)
   }
 }
