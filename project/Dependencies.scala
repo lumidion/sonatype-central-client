@@ -1,6 +1,6 @@
 object Dependencies {
   val versions = new {
-    val gigahorse = "0.9.2"
+    val gigahorse = "0.9.3"
     val requests  = "0.9.0"
     val scala212  = "2.12.20"
     val scala213  = "2.13.16"
