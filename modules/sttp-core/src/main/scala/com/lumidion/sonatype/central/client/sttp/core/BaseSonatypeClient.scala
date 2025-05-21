@@ -1,11 +1,13 @@
 package com.lumidion.sonatype.central.client.sttp.core
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
   GenericSonatypeClient,
   PublishingType,
+  SonatypeCentralComponent,
   SonatypeCredentials
 }
 import com.lumidion.sonatype.central.client.core.RequestParams._
@@ -99,4 +101,31 @@ class BaseSonatypeClient(
       .post(endpoint)
       .mapResponse(_ => ())
   }
+
+  def checkPublishedStatusRequest[E](
+      componentName: SonatypeCentralComponent,
+      timeout: Long
+  )(
+      jsonDecoder: ResponseAs[Either[ResponseException[String, E], CheckPublishedStatusResponse]]
+  ): Request[Either[ResponseException[String, E], CheckPublishedStatusResponse]] = {
+    val endpoint = uri"$clientCheckPublishedUrl"
+      .addParam(
+        CheckPublishedRequestParams.NAMESPACE.unapply,
+        componentName.groupId
+      )
+      .addParam(
+        CheckPublishedRequestParams.NAME.unapply,
+        componentName.artifactId
+      )
+      .addParam(
+        CheckPublishedRequestParams.VERSION.unapply,
+        componentName.version
+      )
+
+    baseRequest
+      .get(endpoint)
+      .readTimeout(timeout.milliseconds)
+      .response(jsonDecoder)
+  }
+
 }

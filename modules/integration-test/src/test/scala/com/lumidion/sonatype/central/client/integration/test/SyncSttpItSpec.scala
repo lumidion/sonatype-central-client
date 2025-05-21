@@ -1,10 +1,12 @@
 package com.lumidion.sonatype.central.client.integration.test
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentName,
   DeploymentState,
-  PublishingType
+  PublishingType,
+  SonatypeCentralComponent
 }
 import com.lumidion.sonatype.central.client.core.DeploymentState.VALIDATED
 import com.lumidion.sonatype.central.client.integration.test.Utils.{
@@ -104,4 +106,44 @@ class SyncSttpItSpec extends AnyFreeSpec with Matchers {
 
     op.isRight shouldBe true
   }
+  testAgainstEndpoints("#checkPublishedStatus") { client =>
+    val op = for {
+      id <- client
+        .uploadBundle(
+          zippedBundle,
+          DeploymentName("com.testing.validated-1.0.0"),
+          Some(PublishingType.USER_MANAGED)
+        )
+        .body
+      status <- client.checkStatus(id)(asJson[CheckStatusResponse]).body
+      _ = status.deploymentState shouldBe DeploymentState.VALIDATED
+
+      // Check validated deployment
+      validatedStatus <- client
+        .checkPublishedStatus(
+          SonatypeCentralComponent("com.testing", "validated", "1.0.0")
+        )(asJson[CheckPublishedStatusResponse])
+        .body
+      _ = validatedStatus.published shouldBe false
+
+      // Check pre-published deployment
+      prePublishedStatus <- client
+        .checkPublishedStatus(
+          SonatypeCentralComponent("com.testing", "project", "1.0.0")
+        )(asJson[CheckPublishedStatusResponse])
+        .body
+      _ = prePublishedStatus.published shouldBe true
+
+      // Check non-existent deployment
+      nonExistentStatus <- client
+        .checkPublishedStatus(
+          SonatypeCentralComponent("com.example", "temp", "1.0.0")
+        )(asJson[CheckPublishedStatusResponse])
+        .body
+      _ = nonExistentStatus.published shouldBe false
+    } yield ()
+
+    op.isRight shouldBe true
+  }
+
 }

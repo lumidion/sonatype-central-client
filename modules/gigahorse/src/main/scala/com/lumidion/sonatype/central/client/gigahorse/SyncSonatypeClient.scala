@@ -1,15 +1,18 @@
 package com.lumidion.sonatype.central.client.gigahorse
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
   GenericSonatypeClient,
   PublishingType,
+  SonatypeCentralComponent,
   SonatypeCentralError,
   SonatypeCredentials
 }
 import com.lumidion.sonatype.central.client.core.RequestParams.{
+  CheckPublishedRequestParams,
   CheckStatusRequestParams,
   UploadBundleRequestParams
 }
@@ -253,6 +256,46 @@ class SyncSonatypeClient(
       } yield finalRes
     }
 
+    Await.result(res, timeoutMs.milliseconds)
+  }
+
+  def checkPublishedStatus(
+      component: SonatypeCentralComponent,
+      timeoutMs: Int = 5000
+  ): Either[SonatypeCentralError, Option[CheckPublishedStatusResponse]] = {
+    val params = Map(
+      CheckPublishedRequestParams.NAMESPACE.unapply -> component.groupId,
+      CheckPublishedRequestParams.NAME.unapply      -> component.artifactId,
+      CheckPublishedRequestParams.VERSION.unapply   -> component.version
+    )
+    val finalParams   = paramsToString(params)
+    val finalEndpoint = s"$clientCheckPublishedUrl?$finalParams"
+
+    val request = Gigahorse
+      .url(finalEndpoint)
+      .withHeaders(authHeader)
+      .withContentType("text/plain")
+      .withRequestTimeout(timeoutMs.milliseconds)
+      .withMethod(HttpVerbs.GET)
+
+    val res = withRetry(request, timeoutMs - 50).map { eitherRes =>
+      for {
+        fullRes <- eitherRes
+        finalRes <- {
+          if (fullRes.status == 404) {
+            Right(None)
+          } else {
+            val str = Gigahorse.asString(fullRes)
+            try {
+              Right(Some(upickle.default.read[CheckPublishedStatusResponse](str)))
+            } catch {
+              case ex: Throwable => Left(GenericError(ex))
+            }
+          }
+        }
+      } yield finalRes
+
+    }
     Await.result(res, timeoutMs.milliseconds)
   }
 }

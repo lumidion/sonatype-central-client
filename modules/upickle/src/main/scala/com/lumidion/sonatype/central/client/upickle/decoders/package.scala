@@ -1,6 +1,7 @@
 package com.lumidion.sonatype.central.client.upickle
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
@@ -23,4 +24,6 @@ package object decoders {
     }
   implicit val checkStatusResponseBodyDecoder: Reader[CheckStatusResponse] =
     macroR[CheckStatusResponse]
+  implicit val checkPublishedResponseBodyDecoder: Reader[CheckPublishedStatusResponse] =
+    macroR[CheckPublishedStatusResponse]
 }

@@ -1,10 +1,12 @@
 package com.lumidion.sonatype.central.client.sttp.core
 
 import com.lumidion.sonatype.central.client.core.{
+  CheckPublishedStatusResponse,
   CheckStatusResponse,
   DeploymentId,
   DeploymentName,
   PublishingType,
+  SonatypeCentralComponent,
   SonatypeCredentials
 }
 
@@ -195,6 +197,50 @@ class SyncSonatypeClient(
     */
   def publishValidatedDeployment(deploymentId: DeploymentId): Response[Unit] = {
     val request = baseClient.publishValidatedDeploymentRequest(deploymentId)
+    request.send(backend)
+  }
+
+  /** Checks if a component is published on Sonatype Central
+    *
+    * @param componentName
+    *   The `SonatypeCentralComponent` containing groupId, artifactId, and version of the component
+    * @param timeout
+    *   The read timeout for the request
+    * @param jsonDecoder
+    *   The sttp json decoder (generally imported from another lib). E.g.
+    *   sttp.client4.ziojson.asJson from the "com.softwaremill.sttp.client4" %% "zio-json" lib
+    * @tparam E
+    *   The error type of the json decoder
+    * @example
+    *   {{{
+    * import com.lumidion.sonatype.central.client.core.{
+    *   SonatypeCentralComponent,
+    *   SonatypeCredentials
+    * }
+    * import com.lumidion.sonatype.central.client.sttp.core.SyncSonatypeClient
+    * import sttp.client4.httpurlconnection.HttpURLConnectionBackend
+    *
+    * val backend             = HttpURLConnectionBackend()
+    * val sonatypeCredentials = SonatypeCredentials("admin", "admin")
+    * val client              = new SyncSonatypeClient(sonatypeCredentials, backend)
+    * val componentName           = SonatypeCentralComponent("com.testing", "validated", "1.0.0")
+    *
+    * for {
+    *   status <- client.checkPublishedStatus(componentName).body
+    * } yield {
+    *   println(s"Published: ${status.published}")
+    * }
+    *   }}}
+    * @return
+    *   A sttp response with a `CheckPublishedStatusResponse` containing the published status
+    */
+  def checkPublishedStatus[E](
+      componentName: SonatypeCentralComponent,
+      timeout: Long = 5000
+  )(
+      jsonDecoder: => ResponseAs[Either[ResponseException[String, E], CheckPublishedStatusResponse]]
+  ): Response[Either[ResponseException[String, E], CheckPublishedStatusResponse]] = {
+    val request = baseClient.checkPublishedStatusRequest(componentName, timeout)(jsonDecoder)
     request.send(backend)
   }
 

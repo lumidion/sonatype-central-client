@@ -16,4 +16,13 @@ object RequestParams {
   object CheckStatusRequestParams {
     case object DEPLOYMENT_ID extends CheckStatusRequestParams("id")
   }
+
+  sealed abstract class CheckPublishedRequestParams(id: String) {
+    def unapply: String = id
+  }
+  object CheckPublishedRequestParams {
+    case object NAMESPACE extends CheckPublishedRequestParams("namespace")
+    case object NAME      extends CheckPublishedRequestParams("name")
+    case object VERSION   extends CheckPublishedRequestParams("version")
+  }
 }
